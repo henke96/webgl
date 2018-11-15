@@ -65,11 +65,9 @@ function gDrawScene() {
 	mat4Perspective(gProjectionMatrix, fovY, aspect, zNear, zFar);
 	gl.uniformMatrix4fv(gProgramInfo.uLocations.projectionMatrix, false, gProjectionMatrix);
 	
-	const mvps = new Float32Array(32);
-	const mvp1 = mat4CreateTranslation(0, 0, -8);
-	const mvp2 = mat4CreateTranslation(-8, 0, -20);
-	mvps.set(mvp1, 0);
-	mvps.set(mvp2, 16);
+	const mvps = mat4ArrayCreateIdentities(2);
+	mat4ArrayTranslation(mvps, 0, 0, 0, -8);
+	mat4ArrayTranslation(mvps, 1, -8, 0, -20);
 	
 	gl.bufferData(gl.ARRAY_BUFFER, mvps, gl.DYNAMIC_DRAW);
 	gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 2);
@@ -141,10 +139,25 @@ function mat4CreateTranslation(x, y, z) {
 	mat[14] = z;
 	return mat;
 }
-function mat4Translation(matArray, matOffset, x, y, z) {
-	mat[matOffset + 12] = x;
-	mat[matOffset + 13] = y;
-	mat[matOffset + 14] = z;
+function mat4ArrayCreateZero(matCount) {
+	return new Float32Array(matCount << 4);
+}
+function mat4ArrayCreateIdentities(matCount) {
+	let mats = new Float32Array(matCount << 4);
+	for (let i = 0; i < matCount; ++i) {
+		let offset = i << 4;
+		mats[offset] = 1;
+		mats[offset + 5] = 1;
+		mats[offset + 10] = 1;
+		mats[offset + 15] = 1;
+	}
+	return mats;
+}
+function mat4ArrayTranslation(matArray, matIndex, x, y, z) {
+	let offset = matIndex << 4;
+	matArray[offset + 12] = x;
+	matArray[offset + 13] = y;
+	matArray[offset + 14] = z;
 }
 function mat4Perspective(mat, fovY, aspect, near, far) {
 	let f = 1.0 / Math.tan(fovY / 2), nf;
