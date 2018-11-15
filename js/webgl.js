@@ -1,23 +1,24 @@
 'use strict';
-window.onload = main;
+window.onload = gMain;
 const HTML_CANVAS = "glCanvas";
 
-const vertexShaderSource = `
+//{ Game - g
+const gVertexShaderSource = `
 	precision mediump float;
 	attribute vec4 aVertexPosition;
 	attribute vec4 aVertexColor;
+	attribute mat4 aModelViewMatrix;
 	
-	uniform mat4 uModelViewMatrix;
 	uniform mat4 uProjectionMatrix;
 	
 	varying vec4 vColor;
 	
 	void main() {
-		gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+		gl_Position = uProjectionMatrix * aModelViewMatrix * aVertexPosition;
 		vColor = aVertexColor;
 	}
 `;
-const fragmentShaderSource = `
+const gFragmentShaderSource = `
 	precision mediump float;
 	varying vec4 vColor;
 	
@@ -26,59 +27,69 @@ const fragmentShaderSource = `
 	}
 `;
 
-function main() {
+function gMain() {
 	const canvas = document.getElementById(HTML_CANVAS);
 	if (!glTryInit(canvas)) {
 		alert("Couldn't initialize WebGL.");
 		return;
 	}
-	const program = glLoadShaderProgram(vertexShaderSource, fragmentShaderSource)
-	programInfo = {
+	const program = glLoadShaderProgram(gVertexShaderSource, gFragmentShaderSource)
+	gProgramInfo = {
 		program: program,
 		aLocations: {
 			vertexPosition: gl.getAttribLocation(program, "aVertexPosition"),
-			vertexColor: gl.getAttribLocation(program, "aVertexColor")
+			vertexColor: gl.getAttribLocation(program, "aVertexColor"),
+			modelViewMatrix: gl.getAttribLocation(program, "aModelViewMatrix")
 		},
 		uLocations: {
-			projectionMatrix: gl.getUniformLocation(program, "uProjectionMatrix"),
-			modelViewMatrix: gl.getUniformLocation(program, "uModelViewMatrix")
+			projectionMatrix: gl.getUniformLocation(program, "uProjectionMatrix")
 		}
 	};
-	initializeBuffers();
-	projectionMatrix = mat4CreateZero();
+	gInitializeArrays();
+	gProjectionMatrix = mat4CreateZero();
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.clearDepth(1.0);
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
 	gl.enable(gl.CULL_FACE);
 	gl.cullFace(gl.BACK);
-	gl.useProgram(programInfo.program);
-	drawScene();
+	gl.useProgram(gProgramInfo.program);
+	gDrawScene();
 }
-function drawScene() {
+function gDrawScene() {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	const fovY = 45 * Math.PI / 180;
 	const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
 	const zNear = 0.1;
 	const zFar = 100.0;
-	mat4Perspective(projectionMatrix, fovY, aspect, zNear, zFar);
-	const modelViewMatrix = mat4CreateTranslation(0, 0, -6);
-	gl.uniformMatrix4fv(programInfo.uLocations.modelViewMatrix, false, modelViewMatrix);
-	gl.uniformMatrix4fv(programInfo.uLocations.projectionMatrix, false, projectionMatrix);
-	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+	mat4Perspective(gProjectionMatrix, fovY, aspect, zNear, zFar);
+	gl.uniformMatrix4fv(gProgramInfo.uLocations.projectionMatrix, false, gProjectionMatrix);
+	
+	const mvps = new Float32Array(32);
+	const mvp1 = mat4CreateTranslation(0, 0, -8);
+	const mvp2 = mat4CreateTranslation(-8, 0, -20);
+	mvps.set(mvp1, 0);
+	mvps.set(mvp2, 16);
+	
+	gl.bufferData(gl.ARRAY_BUFFER, mvps, gl.DYNAMIC_DRAW);
+	gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 2);
 }
-function initializeBuffers() {
-	const positionBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+function gInitializeArrays() {
+	const vertexArray = gl.createVertexArray();
+	gl.bindVertexArray(vertexArray);
+	
 	const positions = new Float32Array([
 		-1.0, 1.0,
 		-1.0, -1.0,
 		1.0, 1.0,
 		1.0, -1.0
 	]);
+	const positionBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-	gl.vertexAttribPointer(programInfo.aLocations.vertexPosition, 2, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(programInfo.aLocations.vertexPosition);
+	gl.vertexAttribPointer(gProgramInfo.aLocations.vertexPosition, 2, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(gProgramInfo.aLocations.vertexPosition);
+	
 	const colors = new Float32Array([
 		1.0, 1.0, 1.0, 1.0,
 		1.0, 0.0, 0.0, 1.0,
@@ -88,16 +99,29 @@ function initializeBuffers() {
 	const colorBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
-	gl.vertexAttribPointer(programInfo.aLocations.vertexColor, 4, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(programInfo.aLocations.vertexColor);
-	buffers = {
-		position: positionBuffer,
-		color: colorBuffer
+	gl.vertexAttribPointer(gProgramInfo.aLocations.vertexColor, 4, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(gProgramInfo.aLocations.vertexColor);
+	
+	const mvpBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, mvpBuffer);
+	for (let i = 0; i < 4; ++i) {
+		let loc = gProgramInfo.aLocations.modelViewMatrix + i;
+		gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, 64, i*16);
+		gl.vertexAttribDivisor(loc, 1);
+		gl.enableVertexAttribArray(loc);
+	}
+	
+	gVertexArray = {
+		array: vertexArray,
+		positionBuffer: positionBuffer,
+		colorBuffer: colorBuffer,
+		mvpBuffer: mvpBuffer
 	};
 }
-var projectionMatrix;
-var programInfo;
-var buffers;
+var gProjectionMatrix;
+var gProgramInfo;
+var gVertexArray;
+//}
 //{ Matrix helper - mat
 function mat4CreateZero() {
 	return new Float32Array(16);
@@ -117,7 +141,11 @@ function mat4CreateTranslation(x, y, z) {
 	mat[14] = z;
 	return mat;
 }
-
+function mat4Translation(matArray, matOffset, x, y, z) {
+	mat[matOffset + 12] = x;
+	mat[matOffset + 13] = y;
+	mat[matOffset + 14] = z;
+}
 function mat4Perspective(mat, fovY, aspect, near, far) {
 	let f = 1.0 / Math.tan(fovY / 2), nf;
 	mat[0] = f / aspect;
@@ -146,7 +174,7 @@ function mat4Perspective(mat, fovY, aspect, near, far) {
 //}
 //{ WebGl helper - gl
 function glTryInit(canvas) {
-	gl = canvas.getContext("webgl", {antialias: false});
+	gl = canvas.getContext("webgl2", {antialias: false});
 	if (gl === null) {
 		return false;
 	}
