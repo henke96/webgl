@@ -46,7 +46,7 @@ function gMain() {
 		}
 	};
 	gInitializeArrays();
-	gProjectionMatrix = mat4CreateZero();
+	
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.clearDepth(1.0);
 	gl.enable(gl.DEPTH_TEST);
@@ -54,16 +54,18 @@ function gMain() {
 	gl.enable(gl.CULL_FACE);
 	gl.cullFace(gl.BACK);
 	gl.useProgram(gProgramInfo.program);
-	gDrawScene();
-}
-function gDrawScene() {
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	
 	const fovY = 45 * Math.PI / 180;
 	const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
 	const zNear = 0.1;
 	const zFar = 100.0;
-	mat4Perspective(gProjectionMatrix, fovY, aspect, zNear, zFar);
-	gl.uniformMatrix4fv(gProgramInfo.uLocations.projectionMatrix, false, gProjectionMatrix);
+	let projectionMatrix = mat4CreatePerspective(fovY, aspect, zNear, zFar);
+	gl.uniformMatrix4fv(gProgramInfo.uLocations.projectionMatrix, false, projectionMatrix);
+	
+	gDrawScene();
+}
+function gDrawScene() {
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
 	const mvps = mat4ArrayCreateIdentities(2);
 	mat4ArrayTranslation(mvps, 0, 0, 0, -8);
@@ -116,7 +118,6 @@ function gInitializeArrays() {
 		mvpBuffer: mvpBuffer
 	};
 }
-var gProjectionMatrix;
 var gProgramInfo;
 var gVertexArray;
 //}
@@ -159,7 +160,8 @@ function mat4ArrayTranslation(matArray, matIndex, x, y, z) {
 	matArray[offset + 13] = y;
 	matArray[offset + 14] = z;
 }
-function mat4Perspective(mat, fovY, aspect, near, far) {
+function mat4CreatePerspective(fovY, aspect, near, far) {
+	let mat = new Float32Array(16);
 	let f = 1.0 / Math.tan(fovY / 2), nf;
 	mat[0] = f / aspect;
 	mat[1] = 0;
@@ -183,6 +185,7 @@ function mat4Perspective(mat, fovY, aspect, near, far) {
 		mat[10] = -1;
 		mat[14] = -2 * near;
 	}
+	return mat;
 }
 //}
 //{ WebGl helper - gl
