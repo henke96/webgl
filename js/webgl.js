@@ -1,5 +1,5 @@
 'use strict';
-window.onload = gMain;
+window.onload = gInit;
 const HTML_CANVAS = "glCanvas";
 
 //{ Game - g
@@ -26,8 +26,11 @@ const gFragmentShaderSource = `
 		gl_FragColor = vColor;
 	}
 `;
+const gMODEL_NICE_RECT = 0;
+const gMODEL_NICE_TRI = 1;
+const gMODEL_NICE_CUBE = 2;
 
-function gMain() {
+function gInit() {
 	const canvas = document.getElementById(HTML_CANVAS);
 	if (!glTryInit(canvas)) {
 		alert("Couldn't initialize WebGL.");
@@ -45,7 +48,14 @@ function gMain() {
 			projectionMatrix: gl.getUniformLocation(program, "uProjectionMatrix")
 		}
 	};
-	gInitializeArrays();
+	gCamera = {
+		x: 0,
+		y: 0,
+		z: 0
+	};
+	gInitModels();
+	gInitArrays();
+	gInitObjects();
 	
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.clearDepth(1.0);
@@ -53,52 +63,148 @@ function gMain() {
 	gl.depthFunc(gl.LEQUAL);
 	gl.enable(gl.CULL_FACE);
 	gl.cullFace(gl.BACK);
+	//gl.enable(gl.BLEND);
+	//gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 	gl.useProgram(gProgramInfo.program);
 	
-	const near = 400; // 90 degrees
-	const viewDistance = 100000;
-	let projectionMatrix = mat4CreatePerspective(gl.canvas.clientWidth, gl.canvas.clientHeight, near, viewDistance);
-	gl.uniformMatrix4fv(gProgramInfo.uLocations.projectionMatrix, false, projectionMatrix);
+	const near = 0.1;
+	const far = 100;
+	const widthRatio = 2; // 90 degrees
+	const heightRatio = widthRatio*gl.canvas.clientHeight/gl.canvas.clientWidth;
+	gProjectionMatrix = mat4CreatePerspective(near*widthRatio, near*heightRatio, near, far);
+	gl.uniformMatrix4fv(gProgramInfo.uLocations.projectionMatrix, false, gProjectionMatrix);
 	
 	gDrawScene();
 }
 function gDrawScene() {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
-	const mvps = mat4ArrayCreateIdentities(2);
-	mat4ArrayTranslation(mvps, 0, 0, 0, -400 - 800);
-	mat4ArrayTranslation(mvps, 1, -2000, 0, -400 - 4000);
-	
-	gl.bufferData(gl.ARRAY_BUFFER, mvps, gl.DYNAMIC_DRAW);
-	gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 2);
+	for (let i = 0; i < gModels.length; ++i) {
+		gModels[i].drawObjects();
+	}
 }
-function gInitializeArrays() {
+function gInitObjects() {
+	let model = gModels[gMODEL_NICE_RECT];
+	model.addGameObject(new GameObject(0, 0, -20));
+	model.addGameObject(new GameObject(-20, 0, -40));
+	
+	model = gModels[gMODEL_NICE_TRI];
+	model.addGameObject(new GameObject(0, 0, -10));
+	model.addGameObject(new GameObject(10, 0, -15));
+	
+	model = gModels[gMODEL_NICE_CUBE];
+	model.addGameObject(new GameObject(2, -1.5, -5));
+	model.addGameObject(new GameObject(-2, 5, -10));
+}
+function gInitModels() {
+	gModels = [];
+	let c = 0;
+	let vertices = [
+		-4, 3, 0, 1, 1, 1,
+		-4, -3, 0, 1, 0, 0,
+		4, 3, 0, 0, 1, 0,
+		4, -3, 0, 0, 0, 1
+	];
+	let indices = [
+		0, 1, 2, 3
+	];
+	gModels[gMODEL_NICE_RECT] = new Model(vertices, indices, gl.TRIANGLE_STRIP);
+	c += vertices.length/6;
+	
+	vertices = [
+		0, 0.5, 0, 0, 1, 1,
+		-0.5, -0.5, 1, 1, 0, 1,
+		0.5, -0.5, 0, 1, 1, 0,
+	];
+	indices = [
+		c+0, c+1, c+2
+	];
+	gModels[gMODEL_NICE_TRI] = new Model(vertices, indices, gl.TRIANGLES);
+	c += vertices.length/6;
+	
+	vertices = [
+		// Front
+		-1, 1, 1, 0, 1, 1,
+		-1, -1, 1, 0, 1, 1,
+		1, 1, 1, 0, 1, 1,
+		1, -1, 1, 0, 1, 1,
+		// Back
+		-1, 1, -1, 1, 0, 1,
+		-1, -1, -1, 1, 0, 1,
+		1, 1, -1, 1, 0, 1,
+		1, -1, -1, 1, 0, 1,
+		// Top
+		-1, 1, -1, 1, 1, 0,
+		-1, 1, 1, 1, 1, 0,
+		1, 1, -1, 1, 1, 0,
+		1, 1, 1, 1, 1, 0,
+		// Bottom
+		-1, -1, -1, 1, 0, 0,
+		-1, -1, 1, 1, 0, 0,
+		1, -1, -1, 1, 0, 0,
+		1, -1, 1, 1, 0, 0,
+		// Right
+		1, 1, 1, 0, 1, 0,
+		1, -1, 1, 0, 1, 0,
+		1, 1, -1, 0, 1, 0,
+		1, -1, -1, 0, 1, 0,
+		// Left
+		-1, 1, 1, 0, 0, 1,
+		-1, -1, 1, 0, 0, 1,
+		-1, 1, -1, 0, 0, 1,
+		-1, -1, -1, 0, 0, 1,
+	];
+	indices = [
+		c+0, c+1, c+2,	c+2, c+1, c+3,
+		c+4, c+6, c+5, 	c+5, c+6, c+7,
+		
+		c+8, c+9, c+10,	c+10, c+9, c+11,
+		c+12, c+14, c+13, 	c+13, c+14, c+15,
+
+		c+16, c+17, c+18,	c+18, c+17, c+19,
+		c+20, c+22, c+21, 	c+21, c+22, c+23,	
+	];
+	gModels[gMODEL_NICE_CUBE] = new Model(vertices, indices, gl.TRIANGLES);
+	c += vertices.length/6;
+}
+function gInitArrays() {
 	const vertexArray = gl.createVertexArray();
 	gl.bindVertexArray(vertexArray);
 	
-	const positions = new Float32Array([
-		-400.0, 300.0,
-		-400.0, -300.0,
-		400.0, 300.0,
-		400.0, -300.0
-	]);
-	const positionBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-	gl.vertexAttribPointer(gProgramInfo.aLocations.vertexPosition, 2, gl.FLOAT, false, 0, 0);
+	let verticesLength = 0;
+	let indicesLength = 0;
+	for (let i = 0; i < gModels.length; ++i) {
+		let model = gModels[i];
+		verticesLength += model.vertices.length;
+		indicesLength += model.indices.length;
+	}
+	
+	let vertices = new Float32Array(verticesLength);
+	let verticesIndex = 0;
+	let indices = new Uint16Array(indicesLength);
+	let indicesIndex = 0;
+	for (let i = 0; i < gModels.length; ++i) {
+		let model = gModels[i];
+		vertices.set(model.vertices, verticesIndex);
+		verticesIndex += model.vertices.length;
+		indices.set(model.indices, indicesIndex);
+		model.startElementIndex = indicesIndex;
+		indicesIndex += model.indices.length;
+	}
+	
+	const stride = 24;
+	const vertexBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+	gl.vertexAttribPointer(gProgramInfo.aLocations.vertexPosition, 3, gl.FLOAT, false, stride, 0);
 	gl.enableVertexAttribArray(gProgramInfo.aLocations.vertexPosition);
 	
-	const colors = new Float32Array([
-		1.0, 1.0, 1.0, 1.0,
-		1.0, 0.0, 0.0, 1.0,
-		0.0, 1.0, 0.0, 1.0,
-		0.0, 0.0, 1.0, 1.0,
-	]);
-	const colorBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
-	gl.vertexAttribPointer(gProgramInfo.aLocations.vertexColor, 4, gl.FLOAT, false, 0, 0);
+	gl.vertexAttribPointer(gProgramInfo.aLocations.vertexColor, 3, gl.FLOAT, false, stride, 12);
 	gl.enableVertexAttribArray(gProgramInfo.aLocations.vertexColor);
+	
+	const indexBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 	
 	const mvpBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, mvpBuffer);
@@ -111,13 +217,52 @@ function gInitializeArrays() {
 	
 	gVertexArray = {
 		array: vertexArray,
-		positionBuffer: positionBuffer,
-		colorBuffer: colorBuffer,
+		vertexBuffer: vertexBuffer,
+		indexBuffer: indexBuffer,
 		mvpBuffer: mvpBuffer
 	};
 }
+var gProjectionMatrix;
 var gProgramInfo;
 var gVertexArray;
+var gModels;
+var gCamera;
+//}
+//{ Model - model
+function Model(vertices, indices, drawOperation) {
+	this.vertices = vertices;
+	this.indices = indices;
+	this.startElementIndex = -1;
+	this.drawOperation = drawOperation;
+	this.gameObjects = [];
+}
+Model.prototype.addGameObject = function(gameObject) {
+	this.gameObjects.push(gameObject);
+}
+Model.prototype.removeGameObject = function(gameObject) {
+	let index = this.gameObjects.indexOf(gameObject);
+	if (index !== -1) {
+		this.gameObjects.splice(index, 1);
+	}
+}
+Model.prototype.drawObjects = function() {
+	let numObjects = this.gameObjects.length;
+	const mvps = mat4ArrayCreateIdentities(numObjects);
+	for (let i = 0; i < numObjects; ++i) {
+		let object = this.gameObjects[i];
+		mat4ArrayTranslation(mvps, i, object.x - gCamera.x, object.y - gCamera.y, object.z - gCamera.z);
+	}
+	gl.bufferData(gl.ARRAY_BUFFER, mvps, gl.DYNAMIC_DRAW);
+	console.log(this);
+	gl.drawElementsInstanced(this.drawOperation, this.indices.length, gl.UNSIGNED_SHORT, 2*this.startElementIndex, numObjects);
+}
+//}
+//{ GameObject - go
+function GameObject(x, y, z) {
+	this.x = x;
+	this.y = y;
+	this.z = z;
+}
 //}
 //{ Matrix helper - mat
 function mat4CreateZero() {
@@ -158,42 +303,17 @@ function mat4ArrayTranslation(matArray, matIndex, x, y, z) {
 	matArray[offset + 13] = y;
 	matArray[offset + 14] = z;
 }
-function mat4CreatePerspectiveOther(fovY, aspect, near, far) {
+function mat4CreatePerspective(width, height, near, far) {
 	let mat = new Float32Array(16);
-	let f = 1.0 / Math.tan(fovY / 2), nf;
-	mat[0] = f / aspect;
-	mat[1] = 0;
-	mat[2] = 0;
-	mat[3] = 0;
-	mat[4] = 0;
-	mat[5] = f;
-	mat[6] = 0;
-	mat[7] = 0;
-	mat[8] = 0;
-	mat[9] = 0;
-	mat[11] = -1;
-	mat[12] = 0;
-	mat[13] = 0;
-	mat[15] = 0;
-	if (far != null && far !== Infinity) {
-		nf = 1 / (near - far);
-		mat[10] = (far + near) * nf;
-		mat[14] = (2 * far * near) * nf;
-	} else {
-		mat[10] = -1;
-		mat[14] = -2 * near;
-	}
+	mat4Perspective(mat, width, height, near, far);
 	return mat;
 }
-function mat4CreatePerspective(width, height, near, viewDistance) {
-	let mat = new Float32Array(16);
-	console.log(width + " " + height);
+function mat4Perspective(mat, width, height, near, far) {
 	mat[0] = 2*near/width;
 	mat[5] = 2*near/height;
-	mat[10] = -(2*near + viewDistance)/viewDistance;
+	mat[10] = -(near + far)/(far - near);
 	mat[11] = -1;
-	mat[14] = -(2*near*(near + viewDistance)/viewDistance);
-	return mat;
+	mat[14] = -(2*near*far/(far - near));
 }
 //}
 //{ WebGl helper - gl
