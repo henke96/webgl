@@ -55,11 +55,9 @@ function gMain() {
 	gl.cullFace(gl.BACK);
 	gl.useProgram(gProgramInfo.program);
 	
-	const fovY = 45 * Math.PI / 180;
-	const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-	const zNear = 0.1;
-	const zFar = 100.0;
-	let projectionMatrix = mat4CreatePerspective(fovY, aspect, zNear, zFar);
+	const near = 400; // 90 degrees
+	const viewDistance = 100000;
+	let projectionMatrix = mat4CreatePerspective(gl.canvas.clientWidth, gl.canvas.clientHeight, near, viewDistance);
 	gl.uniformMatrix4fv(gProgramInfo.uLocations.projectionMatrix, false, projectionMatrix);
 	
 	gDrawScene();
@@ -68,8 +66,8 @@ function gDrawScene() {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
 	const mvps = mat4ArrayCreateIdentities(2);
-	mat4ArrayTranslation(mvps, 0, 0, 0, -8);
-	mat4ArrayTranslation(mvps, 1, -8, 0, -20);
+	mat4ArrayTranslation(mvps, 0, 0, 0, -400 - 800);
+	mat4ArrayTranslation(mvps, 1, -2000, 0, -400 - 4000);
 	
 	gl.bufferData(gl.ARRAY_BUFFER, mvps, gl.DYNAMIC_DRAW);
 	gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 2);
@@ -79,10 +77,10 @@ function gInitializeArrays() {
 	gl.bindVertexArray(vertexArray);
 	
 	const positions = new Float32Array([
-		-1.0, 1.0,
-		-1.0, -1.0,
-		1.0, 1.0,
-		1.0, -1.0
+		-400.0, 300.0,
+		-400.0, -300.0,
+		400.0, 300.0,
+		400.0, -300.0
 	]);
 	const positionBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -160,7 +158,7 @@ function mat4ArrayTranslation(matArray, matIndex, x, y, z) {
 	matArray[offset + 13] = y;
 	matArray[offset + 14] = z;
 }
-function mat4CreatePerspective(fovY, aspect, near, far) {
+function mat4CreatePerspectiveOther(fovY, aspect, near, far) {
 	let mat = new Float32Array(16);
 	let f = 1.0 / Math.tan(fovY / 2), nf;
 	mat[0] = f / aspect;
@@ -185,6 +183,16 @@ function mat4CreatePerspective(fovY, aspect, near, far) {
 		mat[10] = -1;
 		mat[14] = -2 * near;
 	}
+	return mat;
+}
+function mat4CreatePerspective(width, height, near, viewDistance) {
+	let mat = new Float32Array(16);
+	console.log(width + " " + height);
+	mat[0] = 2*near/width;
+	mat[5] = 2*near/height;
+	mat[10] = -(2*near + viewDistance)/viewDistance;
+	mat[11] = -1;
+	mat[14] = -(2*near*(near + viewDistance)/viewDistance);
 	return mat;
 }
 //}
