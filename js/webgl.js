@@ -160,7 +160,7 @@ function gInit() {
 		z: 0
 	};
 	gViewMatrix = [];
-	lookAt(gViewMatrix, [4, 3, 2], [0, 0, -10], [0, 1, 0]);
+	lookAt(gViewMatrix, [0, 0, 0], [0, 0, -5], [0, 1, 0]);
 	gInitModels();
 	gInitArrays();
 	gInitObjects();
@@ -411,6 +411,85 @@ function mat4ArrayTranslation(matArray, matIndex, x, y, z) {
 	matArray[offset + 12] = x;
 	matArray[offset + 13] = y;
 	matArray[offset + 14] = z;
+}
+
+function mat4ArrayRotateRelX(matArray, matIndex, angle) {
+	//Assumes no translation
+	let offset = matIndex << 4;
+	let cos = Math.cos(angle);
+	let sin = Math.sin(angle);
+	let v01 = matArray[offset + 4], v11 = matArray[offset + 5], v21 = matArray[offset + 6], v02 = matArray[offset + 8], v12 = matArray[offset + 9], v22 = matArray[offset + 10];
+	matArray[offset + 4] = cos*v01 + sin*v02;
+	matArray[offset + 5] = cos*v11 + sin*v12;
+	matArray[offset + 6] = cos*v21 + sin*v22;
+	matArray[offset + 8] = cos*v02 - sin*v01;
+	matArray[offset + 9] = cos*v12 - sin*v11;
+	matArray[offset + 10] = cos*v22 - sin*v21;
+}
+function mat4ArrayRotateRelY(matArray, matIndex, angle) {
+	//Assumes no translation
+	let offset = matIndex << 4;
+	let cos = Math.cos(angle);
+	let sin = Math.sin(angle);
+	let v00 = matArray[offset], v10 = matArray[offset + 1], v20 = matArray[offset + 2], v02 = matArray[offset + 8], v12 = matArray[offset + 9], v22 = matArray[offset + 10];
+	matArray[offset] = cos*v00 - sin*v02;
+	matArray[offset + 1] = cos*v10 - sin*v12;
+	matArray[offset + 2] = cos*v20 - sin*v22;
+	matArray[offset + 8] = cos*v02 + sin*v00;
+	matArray[offset + 9] = cos*v12 + sin*v10;
+	matArray[offset + 10] = cos*v22 + sin*v20;
+}
+function mat4ArrayRotateRelZ(matArray, matIndex, angle) {
+	//Assumes no translation
+	let offset = matIndex << 4;
+	let cos = Math.cos(angle);
+	let sin = Math.sin(angle);
+	let v00 = matArray[offset], v10 = matArray[offset + 1], v20 = matArray[offset + 2], v01 = matArray[offset + 4], v11 = matArray[offset + 5], v21 = matArray[offset + 6];
+	matArray[offset] = cos*v00 + sin*v01;
+	matArray[offset + 1] = cos*v10 + sin*v11;
+	matArray[offset + 2] = cos*v20 + sin*v21;
+	matArray[offset + 4] = cos*v01 - sin*v00;
+	matArray[offset + 5] = cos*v11 - sin*v10;
+	matArray[offset + 6] = cos*v21 - sin*v20;
+}
+function mat4ArrayRotateX(matArray, matIndex, angle) {
+	//Assumes no translation
+	let offset = matIndex << 4;
+	let cos = Math.cos(angle);
+	let sin = Math.sin(angle);
+	let v10 = matArray[offset + 1], v20 = matArray[offset + 2], v11 = matArray[offset + 5], v21 = matArray[offset + 6], v12 = matArray[offset + 9], v22 = matArray[offset + 10];
+	matArray[offset + 1] = cos*v10 - sin*v20;
+	matArray[offset + 2] = sin*v10 + cos*v20;
+	matArray[offset + 5] = cos*v11 - sin*v21;
+	matArray[offset + 6] = sin*v11 + cos*v21;
+	matArray[offset + 9] = cos*v12 - sin*v22;
+	matArray[offset + 10] = sin*v12 + cos*v22;
+}
+function mat4ArrayRotateY(matArray, matIndex, angle) {
+	//Assumes no translation
+	let offset = matIndex << 4;
+	let cos = Math.cos(angle);
+	let sin = Math.sin(angle);
+	let v00 = matArray[offset], v20 = matArray[offset + 2], v01 = matArray[offset + 4], v21 = matArray[offset + 6], v02 = matArray[offset + 8], v22 = matArray[offset + 10];
+	matArray[offset] = cos*v00 + sin*v20;
+	matArray[offset + 2] = -sin*v00 + cos*v20;
+	matArray[offset + 4] = cos*v01 + sin*v21;
+	matArray[offset + 6] = -sin*v01 + cos*v21;
+	matArray[offset + 8] = cos*v02 + sin*v22;
+	matArray[offset + 10] = -sin*v02 + cos*v22;
+}
+function mat4ArrayRotateZ(matArray, matIndex, angle) {
+	//Assumes no translation
+	let offset = matIndex << 4;
+	let cos = Math.cos(angle);
+	let sin = Math.sin(angle);
+	let v00 = matArray[offset], v10 = matArray[offset + 1], v01 = matArray[offset + 4], v11 = matArray[offset + 5], v02 = matArray[offset + 8], v12 = matArray[offset + 9];
+	matArray[offset] = cos*v00 - sin*v10;
+	matArray[offset + 1] = sin*v00 + cos*v10;
+	matArray[offset + 4] = cos*v01 - sin*v11;
+	matArray[offset + 5] = sin*v01 + cos*v11;
+	matArray[offset + 8] = cos*v02 - sin*v12;
+	matArray[offset + 9] = sin*v02 + cos*v12;
 }
 function mat4CreatePerspective(width, height, near, far) {
 	let mat = new Float32Array(16);
