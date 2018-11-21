@@ -160,7 +160,7 @@ function gInitObjects() {
 	model.addGameObject(new GameObject(-2, 5, -10));
 	for (let i = 0; i < 100000; ++i) {
 		let maxDist = 130;
-		model.addGameObject(new GameObject(Math.floor((Math.random() - 0.5) * maxDist), Math.floor((Math.random() - 0.5) * maxDist), Math.floor((Math.random() - 0.5) * maxDist)));
+		model.addGameObject(new GameObject((Math.random() - 0.5) * maxDist, (Math.random() - 0.5) * maxDist, (Math.random() - 0.5) * maxDist));
 	}
 }
 function gInitModels() {
