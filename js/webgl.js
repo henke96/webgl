@@ -2,112 +2,6 @@
 window.onload = gInit;
 const HTML_CANVAS = "glCanvas";
 
-function lookAt(out, eye, center, up) {
-  let x0, x1, x2, y0, y1, y2, z0, z1, z2, len;
-  let eyex = eye[0];
-  let eyey = eye[1];
-  let eyez = eye[2];
-  let upx = up[0];
-  let upy = up[1];
-  let upz = up[2];
-  let centerx = center[0];
-  let centery = center[1];
-  let centerz = center[2];
-
-  z0 = eyex - centerx;
-  z1 = eyey - centery;
-  z2 = eyez - centerz;
-
-  len = 1 / Math.sqrt(z0 * z0 + z1 * z1 + z2 * z2);
-  z0 *= len;
-  z1 *= len;
-  z2 *= len;
-
-  x0 = upy * z2 - upz * z1;
-  x1 = upz * z0 - upx * z2;
-  x2 = upx * z1 - upy * z0;
-  len = Math.sqrt(x0 * x0 + x1 * x1 + x2 * x2);
-  if (!len) {
-    x0 = 0;
-    x1 = 0;
-    x2 = 0;
-  } else {
-    len = 1 / len;
-    x0 *= len;
-    x1 *= len;
-    x2 *= len;
-  }
-
-  y0 = z1 * x2 - z2 * x1;
-  y1 = z2 * x0 - z0 * x2;
-  y2 = z0 * x1 - z1 * x0;
-
-  len = Math.sqrt(y0 * y0 + y1 * y1 + y2 * y2);
-  if (!len) {
-    y0 = 0;
-    y1 = 0;
-    y2 = 0;
-  } else {
-    len = 1 / len;
-    y0 *= len;
-    y1 *= len;
-    y2 *= len;
-  }
-
-  out[0] = x0;
-  out[1] = y0;
-  out[2] = z0;
-  out[3] = 0;
-  out[4] = x1;
-  out[5] = y1;
-  out[6] = z1;
-  out[7] = 0;
-  out[8] = x2;
-  out[9] = y2;
-  out[10] = z2;
-  out[11] = 0;
-  out[12] = -(x0 * eyex + x1 * eyey + x2 * eyez);
-  out[13] = -(y0 * eyex + y1 * eyey + y2 * eyez);
-  out[14] = -(z0 * eyex + z1 * eyey + z2 * eyez);
-  out[15] = 1;
-
-  return out;
-}
-
-function multiply(out, a, b, bOffset) {
-  let a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
-  let a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
-  let a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
-  let a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
-
-  // Cache only the current line of the second matrix
-  let b0  = b[0 + bOffset], b1 = b[1 + bOffset], b2 = b[2 + bOffset], b3 = b[3 + bOffset];
-  out[0 + bOffset] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
-  out[1 + bOffset] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
-  out[2 + bOffset] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
-  out[3 + bOffset] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
-
-  b0 = b[4 + bOffset]; b1 = b[5 + bOffset]; b2 = b[6 + bOffset]; b3 = b[7 + bOffset];
-  out[4 + bOffset] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
-  out[5 + bOffset] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
-  out[6 + bOffset] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
-  out[7 + bOffset] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
-
-  b0 = b[8 + bOffset]; b1 = b[9 + bOffset]; b2 = b[10 + bOffset]; b3 = b[11 + bOffset];
-  out[8 + bOffset] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
-  out[9 + bOffset] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
-  out[10 + bOffset] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
-  out[11 + bOffset] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
-
-  b0 = b[12 + bOffset]; b1 = b[13 + bOffset]; b2 = b[14 + bOffset]; b3 = b[15 + bOffset];
-  out[12 + bOffset] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
-  out[13 + bOffset] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
-  out[14 + bOffset] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
-  out[15 + bOffset] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
-  return out;
-}
-
-
 //{ Game - g
 const gVertexShaderSource = `
 	precision mediump float;
@@ -137,8 +31,8 @@ const gMODEL_NICE_TRI = 1;
 const gMODEL_NICE_CUBE = 2;
 
 function gInit() {
-	const canvas = document.getElementById(HTML_CANVAS);
-	if (!glTryInit(canvas)) {
+	gCanvas = document.getElementById(HTML_CANVAS);
+	if (!glTryInit(gCanvas)) {
 		alert("Couldn't initialize WebGL.");
 		return;
 	}
@@ -157,10 +51,15 @@ function gInit() {
 	gCamera = {
 		x: 0,
 		y: 0,
-		z: 0
+		z: 0,
+		xAngle: 0,
+		yAngle: 0
 	};
-	gViewMatrix = [];
-	lookAt(gViewMatrix, [0, 0, 0], [0, 0, -5], [0, 1, 0]);
+	gKeysDown = {};
+	gMouseMove = {
+		leftRight: 0,
+		upDown: 0
+	};
 	gInitModels();
 	gInitArrays();
 	gInitObjects();
@@ -176,13 +75,52 @@ function gInit() {
 	gl.useProgram(gProgramInfo.program);
 	
 	const near = 0.1;
-	const far = 100;
+	const far = 150;
 	const widthRatio = 2; // 90 degrees
 	const heightRatio = widthRatio*gl.canvas.clientHeight/gl.canvas.clientWidth;
 	gProjectionMatrix = mat4CreatePerspective(near*widthRatio, near*heightRatio, near, far);
 	gl.uniformMatrix4fv(gProgramInfo.uLocations.projectionMatrix, false, gProjectionMatrix);
 	
+	gPrevFrameTimestamp = performance.now();
+	window.requestAnimationFrame(gMainLoop);
+	window.onkeydown = gOnKeyDown;
+	window.onkeyup = gOnKeyUp;
+	gCanvas.requestPointerLock = gCanvas.requestPointerLock || gCanvas.mozRequestPointerLock;
+	document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock;
+	document.addEventListener("pointerlockchange", gOnPointerLockChange, false);
+	document.addEventListener("mozpointerlockchange", gOnPointerLockChange, false);
+	gCanvas.onclick = function() {
+		gCanvas.requestPointerLock();
+	}
+}
+function gMainLoop(timestamp) {
+	let deltaTime = timestamp - gPrevFrameTimestamp;
+	gPrevFrameTimestamp = timestamp;
+	let leftRight = 0, frontBack = 0, upDown = 0;
+	let speed = 1/100;
+	if (gKeysDown["w"]) frontBack += speed;
+	if (gKeysDown["s"]) frontBack -= speed;
+	if (gKeysDown["d"]) leftRight += speed;
+	if (gKeysDown["a"]) leftRight -= speed;
+	if (gKeysDown["shift"]) upDown -= speed;
+	if (gKeysDown[" "]) upDown += speed;
+	let sin = Math.sin(gCamera.yAngle), cos = Math.cos(gCamera.yAngle);
+	let deltaZ = -frontBack*cos - leftRight*sin;
+	let deltaX = leftRight*cos - frontBack*sin;
+	gCamera.z += deltaZ*deltaTime;
+	gCamera.x += deltaX*deltaTime;
+	gCamera.y += upDown*deltaTime;
+	
+	let sensitivity = 1 / 200;
+	gCamera.yAngle -= gMouseMove.leftRight*sensitivity;
+	gCamera.xAngle -= gMouseMove.upDown*sensitivity;
+	if (gCamera.xAngle < -Math.PI/2) gCamera.xAngle = -Math.PI/2;
+	if (gCamera.xAngle > Math.PI/2) gCamera.xAngle = Math.PI/2;
+	gMouseMove.leftRight = 0;
+	gMouseMove.upDown = 0;
+	
 	gDrawScene();
+	window.requestAnimationFrame(gMainLoop);
 }
 function gDrawScene() {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -190,6 +128,23 @@ function gDrawScene() {
 	for (let i = 0; i < gModels.length; ++i) {
 		gModels[i].drawObjects();
 	}
+}
+function gOnPointerLockChange() {
+	if (document.pointerLockElement === gCanvas || document.mozPointerLockElement === gCanvas) {
+		document.addEventListener("mousemove", gOnMouseMove, false);
+	} else {
+		document.removeEventListener("mousemove", gOnMouseMove, false);
+	}
+}
+function gOnMouseMove(e) {
+	gMouseMove.leftRight += e.movementX;
+	gMouseMove.upDown += e.movementY;
+}
+function gOnKeyDown(e) {
+	gKeysDown[e.key.toLowerCase()] = true;
+}
+function gOnKeyUp(e) {
+	gKeysDown[e.key.toLowerCase()] = false;
 }
 function gInitObjects() {
 	let model = gModels[gMODEL_NICE_RECT];
@@ -201,8 +156,12 @@ function gInitObjects() {
 	model.addGameObject(new GameObject(10, 0, -15));
 	
 	model = gModels[gMODEL_NICE_CUBE];
-	model.addGameObject(new GameObject(2, -1.5, -5));
+	model.addGameObject(new GameObject(2, -1, -5));
 	model.addGameObject(new GameObject(-2, 5, -10));
+	for (let i = 0; i < 100000; ++i) {
+		let maxDist = 130;
+		model.addGameObject(new GameObject(Math.floor((Math.random() - 0.5) * maxDist), Math.floor((Math.random() - 0.5) * maxDist), Math.floor((Math.random() - 0.5) * maxDist)));
+	}
 }
 function gInitModels() {
 	gModels = [];
@@ -330,12 +289,15 @@ function gInitArrays() {
 		mvpBuffer: mvpBuffer
 	};
 }
+var gCanvas;
 var gProjectionMatrix;
 var gProgramInfo;
 var gVertexArray;
 var gModels;
 var gCamera;
-var gViewMatrix;
+var gPrevFrameTimestamp;
+var gKeysDown;
+var gMouseMove;
 //}
 //{ Model - model
 function Model(vertices, indices, drawOperation) {
@@ -359,8 +321,9 @@ Model.prototype.drawObjects = function() {
 	const mvps = mat4ArrayCreateIdentities(numObjects);
 	for (let i = 0; i < numObjects; ++i) {
 		let object = this.gameObjects[i];
-		mat4ArrayTranslation(mvps, i, object.x, object.y, object.z);
-		multiply(mvps, gViewMatrix, mvps, i << 4);
+		mat4ArrayTranslation(mvps, i, object.x - gCamera.x, object.y - gCamera.y, object.z - gCamera.z);
+		mat4ArrayRotateY(mvps, i, -gCamera.yAngle);
+		mat4ArrayRotateX(mvps, i, -gCamera.xAngle);
 	}
 	gl.bufferData(gl.ARRAY_BUFFER, mvps, gl.DYNAMIC_DRAW);
 	gl.drawElementsInstanced(this.drawOperation, this.indices.length, gl.UNSIGNED_SHORT, 2*this.startElementIndex, numObjects);
@@ -453,43 +416,46 @@ function mat4ArrayRotateRelZ(matArray, matIndex, angle) {
 	matArray[offset + 6] = cos*v21 - sin*v20;
 }
 function mat4ArrayRotateX(matArray, matIndex, angle) {
-	//Assumes no translation
 	let offset = matIndex << 4;
 	let cos = Math.cos(angle);
 	let sin = Math.sin(angle);
-	let v10 = matArray[offset + 1], v20 = matArray[offset + 2], v11 = matArray[offset + 5], v21 = matArray[offset + 6], v12 = matArray[offset + 9], v22 = matArray[offset + 10];
+	let v10 = matArray[offset + 1], v20 = matArray[offset + 2], v11 = matArray[offset + 5], v21 = matArray[offset + 6], v12 = matArray[offset + 9], v22 = matArray[offset + 10], v13 = matArray[offset + 13], v23 = matArray[offset + 14];
 	matArray[offset + 1] = cos*v10 - sin*v20;
 	matArray[offset + 2] = sin*v10 + cos*v20;
 	matArray[offset + 5] = cos*v11 - sin*v21;
 	matArray[offset + 6] = sin*v11 + cos*v21;
 	matArray[offset + 9] = cos*v12 - sin*v22;
 	matArray[offset + 10] = sin*v12 + cos*v22;
+	matArray[offset + 13] = cos*v13 - sin*v23;
+	matArray[offset + 14] = sin*v13 + cos*v23;
 }
 function mat4ArrayRotateY(matArray, matIndex, angle) {
-	//Assumes no translation
 	let offset = matIndex << 4;
 	let cos = Math.cos(angle);
 	let sin = Math.sin(angle);
-	let v00 = matArray[offset], v20 = matArray[offset + 2], v01 = matArray[offset + 4], v21 = matArray[offset + 6], v02 = matArray[offset + 8], v22 = matArray[offset + 10];
+	let v00 = matArray[offset], v20 = matArray[offset + 2], v01 = matArray[offset + 4], v21 = matArray[offset + 6], v02 = matArray[offset + 8], v22 = matArray[offset + 10], v03 = matArray[offset + 12], v23 = matArray[offset + 14];
 	matArray[offset] = cos*v00 + sin*v20;
 	matArray[offset + 2] = -sin*v00 + cos*v20;
 	matArray[offset + 4] = cos*v01 + sin*v21;
 	matArray[offset + 6] = -sin*v01 + cos*v21;
 	matArray[offset + 8] = cos*v02 + sin*v22;
 	matArray[offset + 10] = -sin*v02 + cos*v22;
+	matArray[offset + 12] = cos*v03 + sin*v23;
+	matArray[offset + 14] = -sin*v03 + cos*v23;
 }
 function mat4ArrayRotateZ(matArray, matIndex, angle) {
-	//Assumes no translation
 	let offset = matIndex << 4;
 	let cos = Math.cos(angle);
 	let sin = Math.sin(angle);
-	let v00 = matArray[offset], v10 = matArray[offset + 1], v01 = matArray[offset + 4], v11 = matArray[offset + 5], v02 = matArray[offset + 8], v12 = matArray[offset + 9];
+	let v00 = matArray[offset], v10 = matArray[offset + 1], v01 = matArray[offset + 4], v11 = matArray[offset + 5], v02 = matArray[offset + 8], v12 = matArray[offset + 9], v03 = matArray[offset + 12], v13 = matArray[offset + 13];
 	matArray[offset] = cos*v00 - sin*v10;
 	matArray[offset + 1] = sin*v00 + cos*v10;
 	matArray[offset + 4] = cos*v01 - sin*v11;
 	matArray[offset + 5] = sin*v01 + cos*v11;
 	matArray[offset + 8] = cos*v02 - sin*v12;
 	matArray[offset + 9] = sin*v02 + cos*v12;
+	matArray[offset + 12] = cos*v03 - sin*v13;
+	matArray[offset + 13] = sin*v03 + cos*v13;
 }
 function mat4CreatePerspective(width, height, near, far) {
 	let mat = new Float32Array(16);
