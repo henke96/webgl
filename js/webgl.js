@@ -119,6 +119,17 @@ function gMainLoop(timestamp) {
 	gMouseMove.leftRight = 0;
 	gMouseMove.upDown = 0;
 	
+	let cubeModel = gModels[gMODEL_NICE_CUBE];
+	let len = cubeModel.gameObjects.length;
+	for (let i = 0; i < len; ++i) {
+		cubeModel.gameObjects[i].x += (Math.random() - 0.5)/8;
+		cubeModel.gameObjects[i].y += (Math.random() - 0.5)/8;
+		cubeModel.gameObjects[i].z += (Math.random() - 0.5)/8;
+		cubeModel.gameObjects[i].xAngle += (Math.random() - 0.5)/8;
+		cubeModel.gameObjects[i].yAngle += (Math.random() - 0.5)/8;
+		cubeModel.gameObjects[i].zAngle += (Math.random() - 0.5)/8;
+	}
+	
 	gDrawScene();
 	window.requestAnimationFrame(gMainLoop);
 }
