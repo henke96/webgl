@@ -75,7 +75,7 @@ function gInit() {
 	gl.useProgram(gProgramInfo.program);
 	
 	const near = 0.1;
-	const far = 150;
+	const far = 200;
 	const widthRatio = 2; // 90 degrees
 	const heightRatio = widthRatio*gl.canvas.clientHeight/gl.canvas.clientWidth;
 	gProjectionMatrix = mat4CreatePerspective(near*widthRatio, near*heightRatio, near, far);
@@ -150,18 +150,21 @@ function gInitObjects() {
 	let model = gModels[gMODEL_NICE_RECT];
 	model.addGameObject(new GameObject(0, 0, -20));
 	model.addGameObject(new GameObject(-20, 0, -40));
+	model.gameObjectsFinalized();
 	
 	model = gModels[gMODEL_NICE_TRI];
 	model.addGameObject(new GameObject(0, 0, -10));
 	model.addGameObject(new GameObject(10, 0, -15));
+	model.gameObjectsFinalized();
 	
 	model = gModels[gMODEL_NICE_CUBE];
 	model.addGameObject(new GameObject(2, -1, -5));
 	model.addGameObject(new GameObject(-2, 5, -10));
 	for (let i = 0; i < 100000; ++i) {
-		let maxDist = 130;
+		let maxDist = 150;
 		model.addGameObject(new GameObject((Math.random() - 0.5) * maxDist, (Math.random() - 0.5) * maxDist, (Math.random() - 0.5) * maxDist));
 	}
+	model.gameObjectsFinalized();
 }
 function gInitModels() {
 	gModels = [];
@@ -306,9 +309,13 @@ function Model(vertices, indices, drawOperation) {
 	this.startElementIndex = -1;
 	this.drawOperation = drawOperation;
 	this.gameObjects = [];
+	this.mvps = null;
 }
 Model.prototype.addGameObject = function(gameObject) {
 	this.gameObjects.push(gameObject);
+}
+Model.prototype.gameObjectsFinalized = function() {
+	this.mvps = mat4ArrayCreateZero(this.gameObjects.length);
 }
 Model.prototype.removeGameObject = function(gameObject) {
 	let index = this.gameObjects.indexOf(gameObject);
@@ -318,14 +325,13 @@ Model.prototype.removeGameObject = function(gameObject) {
 }
 Model.prototype.drawObjects = function() {
 	let numObjects = this.gameObjects.length;
-	const mvps = mat4ArrayCreateIdentities(numObjects);
 	for (let i = 0; i < numObjects; ++i) {
 		let object = this.gameObjects[i];
-		mat4ArrayTranslation(mvps, i, object.x - gCamera.x, object.y - gCamera.y, object.z - gCamera.z);
-		mat4ArrayRotateY(mvps, i, -gCamera.yAngle);
-		mat4ArrayRotateX(mvps, i, -gCamera.xAngle);
+		mat4ArrayScaleTranslation(this.mvps, i, 1, object.x - gCamera.x, object.y - gCamera.y, object.z - gCamera.z);
+		mat4ArrayRotateY(this.mvps, i, -gCamera.yAngle);
+		mat4ArrayRotateX(this.mvps, i, -gCamera.xAngle);
 	}
-	gl.bufferData(gl.ARRAY_BUFFER, mvps, gl.DYNAMIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, this.mvps, gl.DYNAMIC_DRAW);
 	gl.drawElementsInstanced(this.drawOperation, this.indices.length, gl.UNSIGNED_SHORT, 2*this.startElementIndex, numObjects);
 }
 //}
@@ -369,8 +375,18 @@ function mat4ArrayCreateIdentities(matCount) {
 	}
 	return mats;
 }
-function mat4ArrayTranslation(matArray, matIndex, x, y, z) {
+function mat4ArrayScaleTranslation(matArray, matIndex, scale, x, y, z) {
 	let offset = matIndex << 4;
+	matArray[offset] = scale;
+	matArray[offset + 1] = 0;
+	matArray[offset + 2] = 0;
+	matArray[offset + 4] = 0;
+	matArray[offset + 5] = scale;
+	matArray[offset + 6] = 0;
+	matArray[offset + 8] = 0;
+	matArray[offset + 9] = 0;
+	matArray[offset + 10] = scale;
+	matArray[offset + 15] = 1;
 	matArray[offset + 12] = x;
 	matArray[offset + 13] = y;
 	matArray[offset + 14] = z;
