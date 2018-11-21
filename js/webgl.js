@@ -162,7 +162,8 @@ function gInitObjects() {
 	model.addGameObject(new GameObject(-2, 5, -10, 1, 0, 0, 0));
 	for (let i = 0; i < 100000; ++i) {
 		let maxDist = 150;
-		model.addGameObject(new GameObject((Math.random() - 0.5) * maxDist, (Math.random() - 0.5) * maxDist, (Math.random() - 0.5) * maxDist, Math.random(), Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI));
+		let xAngle = Math.random()*2*Math.PI, yAngle = Math.random()*2*Math.PI, zAngle = Math.random()*2*Math.PI;
+		model.addGameObject(new GameObject((Math.random() - 0.5) * maxDist, (Math.random() - 0.5) * maxDist, (Math.random() - 0.5) * maxDist, Math.random(), xAngle, yAngle, zAngle));
 	}
 	model.gameObjectsFinalized();
 }
