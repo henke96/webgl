@@ -148,21 +148,21 @@ function gOnKeyUp(e) {
 }
 function gInitObjects() {
 	let model = gModels[gMODEL_NICE_RECT];
-	model.addGameObject(new GameObject(0, 0, -20));
-	model.addGameObject(new GameObject(-20, 0, -40));
+	model.addGameObject(new GameObject(0, 0, -20, 1, 0, 0, 0));
+	model.addGameObject(new GameObject(-20, 0, -40, 1, 0, 0, 0));
 	model.gameObjectsFinalized();
 	
 	model = gModels[gMODEL_NICE_TRI];
-	model.addGameObject(new GameObject(0, 0, -10));
-	model.addGameObject(new GameObject(10, 0, -15));
+	model.addGameObject(new GameObject(0, 0, -10, 1, 0, 0, 0));
+	model.addGameObject(new GameObject(10, 0, -15, 1, 0, 0, 0));
 	model.gameObjectsFinalized();
 	
 	model = gModels[gMODEL_NICE_CUBE];
-	model.addGameObject(new GameObject(2, -1, -5));
-	model.addGameObject(new GameObject(-2, 5, -10));
+	model.addGameObject(new GameObject(2, -1, -5, 1, 0, 0, 0));
+	model.addGameObject(new GameObject(-2, 5, -10, 1, 0, 0, 0));
 	for (let i = 0; i < 100000; ++i) {
 		let maxDist = 150;
-		model.addGameObject(new GameObject((Math.random() - 0.5) * maxDist, (Math.random() - 0.5) * maxDist, (Math.random() - 0.5) * maxDist));
+		model.addGameObject(new GameObject((Math.random() - 0.5) * maxDist, (Math.random() - 0.5) * maxDist, (Math.random() - 0.5) * maxDist, Math.random(), Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI));
 	}
 	model.gameObjectsFinalized();
 }
@@ -327,7 +327,10 @@ Model.prototype.drawObjects = function() {
 	let numObjects = this.gameObjects.length;
 	for (let i = 0; i < numObjects; ++i) {
 		let object = this.gameObjects[i];
-		mat4ArrayScaleTranslation(this.mvps, i, 1, object.x - gCamera.x, object.y - gCamera.y, object.z - gCamera.z);
+		mat4ArrayScaleTranslation(this.mvps, i, object.scale, object.x - gCamera.x, object.y - gCamera.y, object.z - gCamera.z);
+		mat4ArrayRotateRelX(this.mvps, i, object.xAngle);
+		mat4ArrayRotateRelY(this.mvps, i, object.yAngle);
+		mat4ArrayRotateRelZ(this.mvps, i, object.zAngle);
 		mat4ArrayRotateY(this.mvps, i, -gCamera.yAngle);
 		mat4ArrayRotateX(this.mvps, i, -gCamera.xAngle);
 	}
@@ -336,10 +339,14 @@ Model.prototype.drawObjects = function() {
 }
 //}
 //{ GameObject - go
-function GameObject(x, y, z) {
+function GameObject(x, y, z, scale, xAngle, yAngle, zAngle) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
+	this.scale = scale;
+	this.xAngle = xAngle;
+	this.yAngle = yAngle;
+	this.zAngle = zAngle;
 }
 //}
 //{ Matrix helper - mat
