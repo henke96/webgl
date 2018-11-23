@@ -23,17 +23,17 @@ const renderFragmentShaderSource = `
 	}
 `;
 const renderPositionComponents = 3;
-var renderPositionType;
 const renderPositionTypeSize = 4;
 const renderColorComponents = 3;
-var renderColorType;
 const renderColorTypeSize = 4;
+const renderVertexComponents = renderPositionComponents + renderColorComponents;
 const renderVertexSize = renderPositionTypeSize*renderPositionComponents + renderColorTypeSize*renderColorComponents;
-
-var renderIndexType;
 const renderIndexSize = 2;
-
 const renderMvpSize = 64;
+var renderPositionType;
+var renderColorType;
+var renderIndexType;
+
 
 function RenderModel(vertices, indices, drawOperation) {
 	this.vertices = vertices;
@@ -125,9 +125,10 @@ RenderVertexArray.prototype.finalizeModels = function() {
 	for (let i = 0; i < modelsLength; ++i) {
 		let model = this.models[i];
 		vertices.set(model.vertices, verticesIndex);
+		let vertexOffset = verticesIndex/renderVertexComponents;
 		model.startElementOffset = renderIndexSize*indicesIndex;
 		for (let j = 0; j < model.indices.length; ++j, ++indicesIndex) {
-			indices[indicesIndex] = model.indices[j] + verticesIndex;
+			indices[indicesIndex] = model.indices[j] + vertexOffset;
 		}
 		verticesIndex += model.vertices.length;
 	}
@@ -159,7 +160,7 @@ RenderVertexArray.prototype.finalizeModels = function() {
 	gl.bindBuffer(gl.ARRAY_BUFFER, renderMvpBuffer);
 }
 RenderVertexArray.prototype.drawModels = function() {
-	gl.bindVertexArray(this.vertexArray);
+	//gl.bindVertexArray(this.vertexArray);
 	let modelsLength = this.models.length;
 
 	for (let i = 0; i < modelsLength; ++i) {
