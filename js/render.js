@@ -96,7 +96,7 @@ function RenderVertexArray(isDynamic) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, renderMvpBuffer);
 	for (let i = 0; i < 4; ++i) {
 		let loc = renderProgramInfo.aLocations.modelViewMatrix + i;
-		gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, 64, i << 4);
+		gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, renderMvpSize, i << 4);
 		gl.vertexAttribDivisor(loc, 1);
 		gl.enableVertexAttribArray(loc);
 	}
