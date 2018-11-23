@@ -34,7 +34,6 @@ var renderPositionType;
 var renderColorType;
 var renderIndexType;
 
-
 function RenderModel(vertices, indices, drawOperation) {
 	this.vertices = vertices;
 	this.indices = indices;
