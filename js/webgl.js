@@ -84,10 +84,10 @@ function gMainLoop(timestamp) {
 		cubeModel.instances[i].yAngle += (Math.random() - 0.5)/8;
 		cubeModel.instances[i].zAngle += (Math.random() - 0.5)/8;
 	}
-	
+	let lol = performance.now();
 	gDrawScene();
 	window.requestAnimationFrame(gMainLoop);
-	avgFrameTime += (performance.now() - timestamp - avgFrameTime)/60;
+	avgFrameTime += (performance.now() - lol - avgFrameTime)/60;
 }
 function gDrawScene() {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
