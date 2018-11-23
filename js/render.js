@@ -159,7 +159,7 @@ RenderVertexArray.prototype.finalizeModels = function() {
 	gl.bindBuffer(gl.ARRAY_BUFFER, renderMvpBuffer);
 }
 RenderVertexArray.prototype.drawModels = function() {
-	//gl.bindVertexArray(this.vertexArray);
+	gl.bindVertexArray(this.vertexArray);
 	let modelsLength = this.models.length;
 
 	for (let i = 0; i < modelsLength; ++i) {
