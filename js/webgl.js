@@ -43,7 +43,7 @@ var avgFrameTime = 0;
 function gMainLoop(timestamp) {
 	if (timestamp - frameCountStartTime >= 1000) {
 		console.log("FPS: " + frameCount*1000/(timestamp - frameCountStartTime));
-		console.log("Avg Frame Time: " + avgFrameTime);
+		console.log("Frametime: " + avgFrameTime);
 		frameCountStartTime = timestamp;
 		frameCount = 0;
 	}
@@ -84,10 +84,9 @@ function gMainLoop(timestamp) {
 		cubeModel.instances[i].yAngle += (Math.random() - 0.5)/8;
 		cubeModel.instances[i].zAngle += (Math.random() - 0.5)/8;
 	}
-	let lol = performance.now();
 	gDrawScene();
+	avgFrameTime += (performance.now() - timestamp - avgFrameTime)/60;
 	window.requestAnimationFrame(gMainLoop);
-	avgFrameTime += (performance.now() - lol - avgFrameTime)/60;
 }
 function gDrawScene() {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
