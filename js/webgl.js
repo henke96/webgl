@@ -93,7 +93,16 @@ function gInit() {
 		gCanvas.requestPointerLock();
 	}
 }
+var frameCount = 0;
+var frameCountStartTime = performance.now();
 function gMainLoop(timestamp) {
+	if (timestamp - frameCountStartTime >= 1000) {
+		console.log("FPS: " + frameCount*1000/(timestamp - frameCountStartTime));
+		frameCountStartTime = timestamp;
+		frameCount = 0;
+	}
+	++frameCount;
+	
 	let deltaTime = timestamp - gPrevFrameTimestamp;
 	gPrevFrameTimestamp = timestamp;
 	let leftRight = 0, frontBack = 0, upDown = 0;
