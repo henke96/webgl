@@ -209,7 +209,6 @@ function gInitVertexArrays() {
 	gVertexArrays = [];
 	gVertexArrays[gVERTEX_ARRAY_STATIC] = new RenderVertexArray(false);
 }
-var renderCanvas;
 var gProjectionMatrix;
 var gModels;
 var gVertexArrays;
