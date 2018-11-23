@@ -39,9 +39,11 @@ function gInit() {
 }
 var frameCount = 0;
 var frameCountStartTime = performance.now();
+var avgFrameTime = 0;
 function gMainLoop(timestamp) {
 	if (timestamp - frameCountStartTime >= 1000) {
 		console.log("FPS: " + frameCount*1000/(timestamp - frameCountStartTime));
+		console.log("Avg Frame Time: " + avgFrameTime);
 		frameCountStartTime = timestamp;
 		frameCount = 0;
 	}
@@ -85,6 +87,7 @@ function gMainLoop(timestamp) {
 	
 	gDrawScene();
 	window.requestAnimationFrame(gMainLoop);
+	avgFrameTime += (performance.now() - timestamp - avgFrameTime)/60;
 }
 function gDrawScene() {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
