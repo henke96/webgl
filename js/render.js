@@ -28,7 +28,7 @@ const renderColorComponents = 3;
 const renderColorTypeSize = 4;
 const renderVertexComponents = renderPositionComponents + renderColorComponents;
 const renderVertexSize = renderPositionTypeSize*renderPositionComponents + renderColorTypeSize*renderColorComponents;
-const renderIndexSize = 2;
+const renderIndexSize = 4;
 const renderMvpSize = 64;
 var renderPositionType;
 var renderColorType;
@@ -119,7 +119,7 @@ RenderVertexArray.prototype.finalizeModels = function() {
 	}
 	
 	let vertices = new Float32Array(verticesLength);
-	let indices = new Uint16Array(indicesLength);
+	let indices = new Uint32Array(indicesLength);
 	let verticesIndex = 0, indicesIndex = 0;
 	for (let i = 0; i < modelsLength; ++i) {
 		let model = this.models[i];
@@ -174,7 +174,7 @@ function renderInit(near, far, widthRatio) {
 	}
 	renderColorType = gl.FLOAT;
 	renderPositionType = gl.FLOAT;
-	renderIndexType = gl.UNSIGNED_SHORT;
+	renderIndexType = gl.UNSIGNED_INT;
 	const program = glLoadShaderProgram(renderVertexShaderSource, renderFragmentShaderSource)
 	renderProgramInfo = {
 		program: program,
