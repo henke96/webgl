@@ -12,8 +12,8 @@ const gMODEL_NICE_TRI = 1;
 const gMODEL_NICE_CUBE = 2;
 
 function gInit() {
-	const near = 0.1;
-	const far = 200;
+	const near = 0.5;
+	const far = 400;
 	const widthRatio = 2; // 90 degrees
 	renderInit(near, far, widthRatio);
 	gKeysDown = {};
@@ -24,8 +24,7 @@ function gInit() {
 	gInitVertexArrays();
 	gInitModels();
 	gInitObjects();
-	tInit(100, 10, 100);
-	
+	worldInit(10, 10, 10);
 	gPrevFrameTimestamp = performance.now();
 	window.requestAnimationFrame(gMainLoop);
 	window.onkeydown = gOnKeyDown;
@@ -85,13 +84,15 @@ function gMainLoop(timestamp) {
 		cubeModel.instances[i].yAngle += (Math.random() - 0.5)/8;
 		cubeModel.instances[i].zAngle += (Math.random() - 0.5)/8;
 	}
-	tUpdateTerrain();
+	
 	gDrawScene();
 	window.requestAnimationFrame(gMainLoop);
+	avgFrameTime += (performance.now() - timestamp - avgFrameTime)/60;
 }
 function gDrawScene() {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
+	worldDraw();
 	for (let i = 0; i < gVertexArrays.length; ++i) {
 		gVertexArrays[i].drawModels();
 	}
@@ -115,22 +116,22 @@ function gOnKeyUp(e) {
 }
 function gInitObjects() {
 	let model = gModels[gMODEL_NICE_RECT];
-	model.addInstance(new GameObject(0, 0, -20, 1, 0, 0, 0));
-	model.addInstance(new GameObject(-20, 0, -40, 1, 0, 0, 0));
+	model.addInstance(new RenderInstance(0, 0, -20, 1, 0, 0, 0));
+	model.addInstance(new RenderInstance(-20, 0, -40, 1, 0, 0, 0));
 	model.finalizeInstances();
 	
 	model = gModels[gMODEL_NICE_TRI];
-	model.addInstance(new GameObject(0, 0, -10, 1, 0, 0, 0));
-	model.addInstance(new GameObject(10, 0, -15, 1, 0, 0, 0));
+	model.addInstance(new RenderInstance(0, 0, -10, 1, 0, 0, 0));
+	model.addInstance(new RenderInstance(10, 0, -15, 1, 0, 0, 0));
 	model.finalizeInstances();
 	
 	model = gModels[gMODEL_NICE_CUBE];
-	model.addInstance(new GameObject(2, -1, -5, 1, 0, 0, 0));
-	model.addInstance(new GameObject(-2, 5, -10, 1, 0, 0, 0));
+	model.addInstance(new RenderInstance(2, -1, -5, 1, 0, 0, 0));
+	model.addInstance(new RenderInstance(-2, 5, -10, 1, 0, 0, 0));
 	for (let i = 0; i < 0; ++i) {
 		let maxDist = 150;
 		let xAngle = Math.random()*2*Math.PI, yAngle = Math.random()*2*Math.PI, zAngle = Math.random()*2*Math.PI;
-		model.addInstance(new GameObject((Math.random() - 0.5)*maxDist, (Math.random() - 0.5)*maxDist, (Math.random() - 0.5)*maxDist, Math.random(), xAngle, yAngle, zAngle));
+		model.addInstance(new RenderInstance((Math.random() - 0.5)*maxDist, (Math.random() - 0.5)*maxDist, (Math.random() - 0.5)*maxDist, Math.random(), xAngle, yAngle, zAngle));
 	}
 	model.finalizeInstances();
 }
@@ -208,8 +209,7 @@ function gInitModels() {
 }
 function gInitVertexArrays() {
 	gVertexArrays = [];
-	gVertexArrays[gVERTEX_ARRAY_STATIC] = new RenderVertexArray(false);
-	gVertexArrays[gVERTEX_ARRAY_DYNAMIC] = new RenderVertexArray(true);
+	gVertexArrays[gVERTEX_ARRAY_STATIC] = new RenderVertexArray(gl.STATIC_DRAW);
 }
 var gProjectionMatrix;
 var gModels;
@@ -217,98 +217,4 @@ var gVertexArrays;
 var gPrevFrameTimestamp;
 var gKeysDown;
 var gMouseMove;
-//}
-//{ Terrain - t
-function tInit(sizeX, sizeY, sizeZ) {
-	tSizeX = sizeX;
-	tSizeY = sizeY;
-	tSizeZ = sizeZ;
-	let len = sizeX*sizeY*sizeZ;
-	tBlocks = new Int32Array(len);
-	for (let i = 0; i < len; ++i) {
-		tBlocks[i] = Math.trunc(Math.random()*2);
-	}
-	tVertices = new Float32Array(len*144);
-	tIndices = new Float32Array(len*36);
-	tModel = new RenderModel([], [], gl.TRIANGLES);
-	tInstance = new GameObject(0, 0, 0, 1, 0, 0, 0);
-	tModel.addInstance(tInstance);
-	tModel.finalizeInstances();
-	gVertexArrays[gVERTEX_ARRAY_DYNAMIC].addModel(tModel);
-	gVertexArrays[gVERTEX_ARRAY_DYNAMIC].finalizeModels();
-}
-function tUpdateTerrain() {	
-	let vertexOffset = 0;
-	let verticesIndex = 0;
-	let indicesIndex = 0;
-	let lol = performance.now();
-	for (let x = 0; x < tSizeX; ++x) {
-		let xOffset = x << 1;
-		for (let y = 0; y < tSizeY; ++y) {
-			let yOffset = y << 1;
-			for (let z = 0; z < tSizeZ; ++z) {
-				let zOffset = z << 1;
-				//z face
-				tVertices.set([xOffset-1, yOffset+1, zOffset+1, 0, 1, 1, xOffset-1, yOffset-1, zOffset+1, 0, 1, 1, xOffset+1, yOffset+1, zOffset+1, 0, 1, 1, xOffset+1, yOffset-1, zOffset+1, 0, 1, 1], verticesIndex);
-				tIndices.set([vertexOffset + 0, vertexOffset + 1, vertexOffset + 2, vertexOffset + 2, vertexOffset + 1, vertexOffset + 3], indicesIndex);
-				vertexOffset += 4;
-				verticesIndex += 24;
-				indicesIndex += 6;
-				//-z face
-				tVertices.set([xOffset-1, yOffset+1, zOffset-1, 1, 0, 1, xOffset-1, yOffset-1, zOffset-1, 1, 0, 1, xOffset+1, yOffset+1, zOffset-1, 1, 0, 1, xOffset+1, yOffset-1, zOffset-1, 1, 0, 1], verticesIndex);
-				tIndices.set([vertexOffset + 0, vertexOffset + 2, vertexOffset + 1, vertexOffset + 1, vertexOffset + 2, vertexOffset + 3], indicesIndex);
-				vertexOffset += 4;
-				verticesIndex += 24;
-				indicesIndex += 6;
-				//y face
-				tVertices.set([xOffset-1, yOffset+1, zOffset-1, 1, 1, 0, xOffset-1, yOffset+1, zOffset+1, 1, 1, 0, xOffset+1, yOffset+1, zOffset-1, 1, 1, 0, xOffset+1, yOffset+1, zOffset+1, 1, 1, 0], verticesIndex);
-				tIndices.set([vertexOffset + 0, vertexOffset + 1, vertexOffset + 2, vertexOffset + 2, vertexOffset + 1, vertexOffset + 3], indicesIndex);
-				vertexOffset += 4;
-				verticesIndex += 24;
-				indicesIndex += 6;
-				//-y face
-				tVertices.set([xOffset-1, yOffset-1, zOffset-1, 1, 0, 0, xOffset-1, yOffset-1, zOffset+1, 1, 0, 0, xOffset+1, yOffset-1, zOffset-1, 1, 0, 0, xOffset+1, yOffset-1, zOffset+1, 1, 0, 0], verticesIndex);
-				tIndices.set([vertexOffset + 0, vertexOffset + 2, vertexOffset + 1, vertexOffset + 1, vertexOffset + 2, vertexOffset + 3], indicesIndex);
-				vertexOffset += 4;
-				verticesIndex += 24;
-				indicesIndex += 6;
-				//x face
-				tVertices.set([xOffset+1, yOffset+1, zOffset+1, 0, 1, 0, xOffset+1, yOffset-1, zOffset+1, 0, 1, 0, xOffset+1, yOffset+1, zOffset-1, 0, 1, 0, xOffset+1, yOffset-1, zOffset-1, 0, 1, 0], verticesIndex);
-				tIndices.set([vertexOffset + 0, vertexOffset + 1, vertexOffset + 2, vertexOffset + 2, vertexOffset + 1, vertexOffset + 3], indicesIndex);
-				vertexOffset += 4;
-				verticesIndex += 24;
-				indicesIndex += 6;
-				//-x face
-				tVertices.set([xOffset-1, yOffset+1, zOffset+1, 0, 0, 1, xOffset-1, yOffset-1, zOffset+1, 0, 0, 1, xOffset-1, yOffset+1, zOffset-1, 0, 0, 1, xOffset-1, yOffset-1, zOffset-1, 0, 0, 1], verticesIndex);
-				tIndices.set([vertexOffset + 0, vertexOffset + 2, vertexOffset + 1, vertexOffset + 1, vertexOffset + 2, vertexOffset + 3], indicesIndex);
-				vertexOffset += 4;
-				verticesIndex += 24;
-				indicesIndex += 6;
-			}
-		}
-	}
-	avgFrameTime += (performance.now() - lol - avgFrameTime)/60;
-	tModel.vertices = tVertices.subarray(0, verticesIndex);
-	tModel.indices = tIndices.subarray(0, indicesIndex);
-	gVertexArrays[gVERTEX_ARRAY_DYNAMIC].finalizeModels();
-}
-var tVertices;
-var tIndices;
-var tModel;
-var tInstance;
-var tBlocks;
-var tSizeX;
-var tSizeY;
-var tSizeZ;
-//}
-//{ GameObject - go
-function GameObject(x, y, z, scale, xAngle, yAngle, zAngle) {
-	this.x = x;
-	this.y = y;
-	this.z = z;
-	this.scale = scale;
-	this.xAngle = xAngle;
-	this.yAngle = yAngle;
-	this.zAngle = zAngle;
-}
 //}

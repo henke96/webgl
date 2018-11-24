@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 const renderVertexShaderSource = `
 	precision mediump float;
 	attribute vec4 aVertexPosition;
@@ -28,11 +28,21 @@ const renderColorComponents = 3;
 const renderColorTypeSize = 4;
 const renderVertexComponents = renderPositionComponents + renderColorComponents;
 const renderVertexSize = renderPositionTypeSize*renderPositionComponents + renderColorTypeSize*renderColorComponents;
-const renderIndexSize = 4;
+const renderIndexSize = 2;
 const renderMvpSize = 64;
 var renderPositionType;
 var renderColorType;
 var renderIndexType;
+
+function RenderInstance(x, y, z, scale, xAngle, yAngle, zAngle) {
+	this.x = x;
+	this.y = y;
+	this.z = z;
+	this.scale = scale;
+	this.xAngle = xAngle;
+	this.yAngle = yAngle;
+	this.zAngle = zAngle;
+}
 
 function RenderModel(vertices, indices, drawOperation) {
 	this.vertices = vertices;
@@ -56,10 +66,6 @@ RenderModel.prototype.finalizeInstances = function() {
 }
 RenderModel.prototype.drawInstances = function() {
 	let instancesLength = this.instances.length;
-	if (renderMvpBufferLength < instancesLength) {
-		renderMvpBufferLength = 2*instancesLength;
-		gl.bufferData(gl.ARRAY_BUFFER, renderMvpSize*renderMvpBufferLength, gl.STREAM_DRAW);
-	}
 	for (let i = 0; i < instancesLength; ++i) {
 		let instance = this.instances[i];
 		mat4ArrayScaleTranslation(this.mvps, i, instance.scale, instance.x - renderCamera.x, instance.y - renderCamera.y, instance.z - renderCamera.z);
@@ -69,15 +75,16 @@ RenderModel.prototype.drawInstances = function() {
 		mat4ArrayRotateY(this.mvps, i, -renderCamera.yAngle);
 		mat4ArrayRotateX(this.mvps, i, -renderCamera.xAngle);
 	}
-	gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.mvps);
+	gl.bufferData(gl.ARRAY_BUFFER, this.mvps, gl.STREAM_DRAW);
 	gl.drawElementsInstanced(this.drawOperation, this.indices.length, renderIndexType, this.startElementOffset, instancesLength);
 }
 
-function RenderVertexArray(isDynamic) {
-	this.isDynamic = isDynamic;
+function RenderVertexArray(glBufferUsage) {
+	this.glBufferUsage = glBufferUsage;
 	this.models = [];
 	this.vertexBufferLength = -1;
 	this.indexBufferLength = -1;
+	this.mvpBufferLength = -1;
 	this.vertexArray = gl.createVertexArray();
 	this.vertexBuffer = gl.createBuffer();
 	this.indexBuffer = gl.createBuffer();
@@ -93,7 +100,7 @@ function RenderVertexArray(isDynamic) {
 	
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
 	
-	gl.bindBuffer(gl.ARRAY_BUFFER, renderMvpBuffer);
+	gl.bindBuffer(gl.ARRAY_BUFFER, this.mvpBuffer);
 	for (let i = 0; i < 4; ++i) {
 		let loc = renderProgramInfo.aLocations.modelViewMatrix + i;
 		gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, renderMvpSize, i << 4);
@@ -119,7 +126,7 @@ RenderVertexArray.prototype.finalizeModels = function() {
 	}
 	
 	let vertices = new Float32Array(verticesLength);
-	let indices = new Uint32Array(indicesLength);
+	let indices = new Uint16Array(indicesLength);
 	let verticesIndex = 0, indicesIndex = 0;
 	for (let i = 0; i < modelsLength; ++i) {
 		let model = this.models[i];
@@ -133,7 +140,7 @@ RenderVertexArray.prototype.finalizeModels = function() {
 	}
 	
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-	if (this.vertexBufferLength < vertices.length) {
+	/*if (this.vertexBufferLength < vertices.length) {
 		if (this.isDynamic) {
 			this.vertexBufferLength = 2*vertices.length;
 			gl.bufferData(gl.ARRAY_BUFFER, renderVertexSize*this.vertexBufferLength, gl.DYNAMIC_DRAW);
@@ -141,11 +148,12 @@ RenderVertexArray.prototype.finalizeModels = function() {
 			this.vertexBufferLength = vertices.length;
 			gl.bufferData(gl.ARRAY_BUFFER, renderVertexSize*vertices.length, gl.STATIC_DRAW);
 		}
-	}
-	gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertices);
+	}*/
+	//gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertices);
+	gl.bufferData(gl.ARRAY_BUFFER, vertices, this.glBufferUsage);
 	
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-	if (this.indexBufferLength < indices.length) {
+	/*if (this.indexBufferLength < indices.length) {
 		if (this.isDynamic) {
 			this.indexBufferLength = 2*indices.length;
 			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, renderIndexSize*this.indexBufferLength, gl.DYNAMIC_DRAW);
@@ -153,17 +161,18 @@ RenderVertexArray.prototype.finalizeModels = function() {
 			this.indexBufferLength = indices.length;
 			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, renderIndexSize*indices.length, gl.DYNAMIC_DRAW);
 		}
-	}
-	gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, indices);
-	
-	gl.bindBuffer(gl.ARRAY_BUFFER, renderMvpBuffer);
+	}*/
+	//gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, indices);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, this.glBufferUsage);
 }
 RenderVertexArray.prototype.drawModels = function() {
 	gl.bindVertexArray(this.vertexArray);
+	gl.bindBuffer(gl.ARRAY_BUFFER, this.mvpBuffer);
 	let modelsLength = this.models.length;
 
 	for (let i = 0; i < modelsLength; ++i) {
-		this.models[i].drawInstances();
+		let model = this.models[i];
+		model.drawInstances();
 	}
 }
 function renderInit(near, far, widthRatio) {
@@ -174,7 +183,7 @@ function renderInit(near, far, widthRatio) {
 	}
 	renderColorType = gl.FLOAT;
 	renderPositionType = gl.FLOAT;
-	renderIndexType = gl.UNSIGNED_INT;
+	renderIndexType = gl.UNSIGNED_SHORT;
 	const program = glLoadShaderProgram(renderVertexShaderSource, renderFragmentShaderSource)
 	renderProgramInfo = {
 		program: program,
@@ -208,13 +217,8 @@ function renderInit(near, far, widthRatio) {
 	const heightRatio = widthRatio*gl.canvas.clientHeight/gl.canvas.clientWidth;
 	renderProjectionMatrix = mat4CreatePerspective(near*widthRatio, near*heightRatio, near, far);
 	gl.uniformMatrix4fv(renderProgramInfo.uLocations.projectionMatrix, false, renderProjectionMatrix);
-	
-	renderMvpBufferLength = -1;
-	renderMvpBuffer = gl.createBuffer();
 }
 var renderCanvas;
 var renderProgramInfo;
-var renderMvpBuffer;
-var renderMvpBufferLength;
 var renderCamera;
 var renderProjectionMatrix;
