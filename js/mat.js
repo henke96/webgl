@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 function mat4CreateZero() {
 	return new Float32Array(16);
 }

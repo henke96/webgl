@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 function glTryInit(canvas) {
 	gl = canvas.getContext("webgl2", {antialias: false});
 	if (gl === null) {
