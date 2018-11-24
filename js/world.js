@@ -301,7 +301,7 @@ function worldGetChunk(xChunk, yChunk, zChunk) {
 	if (xChunk < 0 || xChunk >= worldSizeXChunks || yChunk < 0 || yChunk >= worldSizeYChunks || zChunk < 0 || zChunk >= worldSizeZChunks) {
 		return null;
 	}
-	return worldChunks[xChunk*worldSizeYZChunks + yChunk*worldSizeYChunks + zChunk];
+	return worldChunks[xChunk*worldSizeYZChunks + yChunk*worldSizeZChunks + zChunk];
 }
 function worldSetBlock(x, y, z, value) {
 	let chunk = worldGetChunk(x >> 4, y >> 4, z >> 4);
@@ -325,7 +325,7 @@ function worldInit(sizeXChunks, sizeYChunks, sizeZChunks) {
 	for (let xChunk = 0; xChunk < worldSizeXChunks; ++xChunk) {
 		for (let yChunk = 0; yChunk < worldSizeYChunks; ++yChunk) {
 			for (let zChunk = 0; zChunk < worldSizeZChunks; ++zChunk) {
-				worldChunks[xChunk*worldSizeYZChunks + yChunk*worldSizeYChunks + zChunk] = new WorldChunk(xChunk, yChunk, zChunk);
+				worldChunks[xChunk*worldSizeYZChunks + yChunk*worldSizeZChunks + zChunk] = new WorldChunk(xChunk, yChunk, zChunk);
 			}
 		}
 	}
@@ -335,7 +335,7 @@ function worldInit(sizeXChunks, sizeYChunks, sizeZChunks) {
 	worldVertices = new Float32Array(maxVertices*renderVertexComponents);
 	worldIndices = new Float32Array(maxIndices);
 	
-	let block = 0;
+	/*let block = 0;
 	for (let x = 0; x < worldSizeXChunks*16; ++x) {
 		for (let y = 0; y < worldSizeYChunks*16; ++y) {
 			for (let z = 0; z < worldSizeZChunks*16; ++z) {
@@ -348,7 +348,7 @@ function worldInit(sizeXChunks, sizeYChunks, sizeZChunks) {
 			block = !block;
 		}
 		block = !block;
-	}
+	}*/
 	/*for (let x = 0; x < worldSizeXChunks*16; ++x) {
 		for (let y = 0; y < worldSizeYChunks*16; ++y) {
 			for (let z = 0; z < worldSizeZChunks*16; ++z) {
@@ -359,6 +359,13 @@ function worldInit(sizeXChunks, sizeYChunks, sizeZChunks) {
 			}
 		}
 	}*/
+	for (let x = 0; x < worldSizeXChunks*16; ++x) {
+		for (let y = 0; y < worldSizeYChunks*16; ++y) {
+			for (let z = 0; z < worldSizeZChunks*16; ++z) {
+				worldSetBlock(x, y, z, Math.random()*2);
+			}
+		}
+	}
 	for (let i = 0; i < worldChunks.length; ++i) {
 		let chunk = worldChunks[i];
 		if (chunk) {
@@ -368,7 +375,6 @@ function worldInit(sizeXChunks, sizeYChunks, sizeZChunks) {
 }
 var worldVertices;
 var worldIndices;
-var worldBlocks;
 var worldChunks;
 var worldSizeXChunks;
 var worldSizeYChunks;
