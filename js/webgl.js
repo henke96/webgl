@@ -209,7 +209,7 @@ function gInitModels() {
 }
 function gInitVertexArrays() {
 	gVertexArrays = [];
-	gVertexArrays[gVERTEX_ARRAY_STATIC] = new RenderVertexArray(gl.STATIC_DRAW);
+	gVertexArrays[gVERTEX_ARRAY_STATIC] = new RenderVertexArray(gl.STATIC_DRAW, gl.UNSIGNED_BYTE);
 }
 var gProjectionMatrix;
 var gModels;

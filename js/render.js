@@ -28,11 +28,9 @@ const renderColorComponents = 3;
 const renderColorTypeSize = 4;
 const renderVertexComponents = renderPositionComponents + renderColorComponents;
 const renderVertexSize = renderPositionTypeSize*renderPositionComponents + renderColorTypeSize*renderColorComponents;
-const renderIndexSize = 2;
 const renderMvpSize = 64;
 var renderPositionType;
 var renderColorType;
-var renderIndexType;
 
 function RenderInstance(x, y, z, scale, xAngle, yAngle, zAngle) {
 	this.x = x;
@@ -64,7 +62,7 @@ RenderModel.prototype.removeInstance = function(instance) {
 RenderModel.prototype.finalizeInstances = function() {
 	this.mvps = mat4ArrayCreateZero(this.instances.length);
 }
-RenderModel.prototype.drawInstances = function() {
+RenderModel.prototype.updateMvps = function() {
 	let instancesLength = this.instances.length;
 	for (let i = 0; i < instancesLength; ++i) {
 		let instance = this.instances[i];
@@ -75,12 +73,24 @@ RenderModel.prototype.drawInstances = function() {
 		mat4ArrayRotateY(this.mvps, i, -renderCamera.yAngle);
 		mat4ArrayRotateX(this.mvps, i, -renderCamera.xAngle);
 	}
-	gl.bufferData(gl.ARRAY_BUFFER, this.mvps, gl.STREAM_DRAW);
-	gl.drawElementsInstanced(this.drawOperation, this.indices.length, renderIndexType, this.startElementOffset, instancesLength);
 }
 
-function RenderVertexArray(glBufferUsage) {
+function RenderVertexArray(glBufferUsage, glIndexType) {
 	this.glBufferUsage = glBufferUsage;
+	this.glIndexType = glIndexType;
+	switch (glIndexType) {
+	case gl.UNSIGNED_INT:
+		this.indexTypeSize = 4;
+		break;
+	case gl.UNSIGNED_SHORT:
+		this.indexTypeSize = 2;
+		break;
+	case gl.UNSIGNED_BYTE:
+		this.indexTypeSize = 1;
+		break;
+	default:
+		throw "Invalid glIndexType";
+	}
 	this.models = [];
 	this.vertexBufferLength = -1;
 	this.indexBufferLength = -1;
@@ -126,13 +136,21 @@ RenderVertexArray.prototype.finalizeModels = function() {
 	}
 	
 	let vertices = new Float32Array(verticesLength);
-	let indices = new Uint16Array(indicesLength);
+	
+	let indices;
+	if (this.glIndexType === gl.UNSIGNED_INT) {
+		indices = new Uint32Array(indicesLength);
+	} else if (this.glIndexType === gl.UNSIGNED_SHORT) {
+		indices = new Uint16Array(indicesLength);
+	} else if (this.glIndexType === gl.UNSIGNED_BYTE) {
+		indices = new Uint8Array(indicesLength);
+	}
 	let verticesIndex = 0, indicesIndex = 0;
 	for (let i = 0; i < modelsLength; ++i) {
 		let model = this.models[i];
 		vertices.set(model.vertices, verticesIndex);
 		let vertexOffset = verticesIndex/renderVertexComponents;
-		model.startElementOffset = renderIndexSize*indicesIndex;
+		model.startElementOffset = this.indexTypeSize*indicesIndex;
 		for (let j = 0; j < model.indices.length; ++j, ++indicesIndex) {
 			indices[indicesIndex] = model.indices[j] + vertexOffset;
 		}
@@ -172,7 +190,9 @@ RenderVertexArray.prototype.drawModels = function() {
 
 	for (let i = 0; i < modelsLength; ++i) {
 		let model = this.models[i];
-		model.drawInstances();
+		model.updateMvps();
+		gl.bufferData(gl.ARRAY_BUFFER, model.mvps, gl.STREAM_DRAW);
+		gl.drawElementsInstanced(model.drawOperation, model.indices.length, this.glIndexType, model.startElementOffset, model.instances.length);
 	}
 }
 function renderInit(near, far, widthRatio) {
@@ -183,7 +203,6 @@ function renderInit(near, far, widthRatio) {
 	}
 	renderColorType = gl.FLOAT;
 	renderPositionType = gl.FLOAT;
-	renderIndexType = gl.UNSIGNED_SHORT;
 	const program = glLoadShaderProgram(renderVertexShaderSource, renderFragmentShaderSource)
 	renderProgramInfo = {
 		program: program,

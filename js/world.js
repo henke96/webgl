@@ -9,7 +9,7 @@ function WorldChunk(xChunk, yChunk, zChunk) {
 	this.model = new RenderModel([], [], gl.TRIANGLES);
 	this.model.addInstance(new RenderInstance(xChunk*32, yChunk*32, zChunk*32, 1, 0, 0, 0));
 	this.model.finalizeInstances();
-	this.vertexArray = new RenderVertexArray(gl.STATIC_DRAW);
+	this.vertexArray = new RenderVertexArray(gl.STATIC_DRAW, gl.UNSIGNED_SHORT);
 	this.vertexArray.addModel(this.model);
 }
 WorldChunk.prototype.updateModel = function() {
