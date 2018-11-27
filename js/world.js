@@ -305,7 +305,7 @@ function worldGetChunk(xChunk, yChunk, zChunk) {
 }
 function worldSetBlock(x, y, z, value) {
 	let chunk = worldGetChunk(x >> 4, y >> 4, z >> 4);
-	chunk.blocks[(x & 0xf)*256 + (y & 0xf)*16 + (z & 0xf)] = value;
+	chunk.blocks[((x & 0xf) << 8) + ((y & 0xf) << 4) + (z & 0xf)] = value;
 }
 function worldDraw() {
 	let len = worldChunks.length;
