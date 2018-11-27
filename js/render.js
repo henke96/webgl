@@ -42,13 +42,14 @@ function RenderInstance(x, y, z, scale, xAngle, yAngle, zAngle) {
 	this.zAngle = zAngle;
 }
 
-function RenderModel(vertices, indices, drawOperation) {
+function RenderModel(vertices, indices, drawOperation, isRelativeCamera) {
 	this.vertices = vertices;
 	this.indices = indices;
 	this.drawOperation = drawOperation;
 	this.instances = [];
 	this.startElementOffset = -1;
 	this.mvps = null;
+	this.isRelativeCamera = isRelativeCamera;
 }
 RenderModel.prototype.addInstance = function(instance) {
 	this.instances.push(instance);
@@ -64,14 +65,24 @@ RenderModel.prototype.finalizeInstances = function() {
 }
 RenderModel.prototype.updateMvps = function() {
 	let instancesLength = this.instances.length;
-	for (let i = 0; i < instancesLength; ++i) {
-		let instance = this.instances[i];
-		mat4ArrayScaleTranslation(this.mvps, i, instance.scale, instance.x - renderCamera.x, instance.y - renderCamera.y, instance.z - renderCamera.z);
-		mat4ArrayRotateRelX(this.mvps, i, instance.xAngle);
-		mat4ArrayRotateRelY(this.mvps, i, instance.yAngle);
-		mat4ArrayRotateRelZ(this.mvps, i, instance.zAngle);
-		mat4ArrayRotateY(this.mvps, i, -renderCamera.yAngle);
-		mat4ArrayRotateX(this.mvps, i, -renderCamera.xAngle);
+	if (this.isRelativeCamera) {
+		for (let i = 0; i < instancesLength; ++i) {
+			let instance = this.instances[i];
+			mat4ArrayScaleTranslation(this.mvps, i, instance.scale, instance.x - renderCamera.x, instance.y - renderCamera.y, instance.z - renderCamera.z);
+			mat4ArrayRotateRelX(this.mvps, i, instance.xAngle);
+			mat4ArrayRotateRelY(this.mvps, i, instance.yAngle);
+			mat4ArrayRotateRelZ(this.mvps, i, instance.zAngle);
+			mat4ArrayRotateY(this.mvps, i, -renderCamera.yAngle);
+			mat4ArrayRotateX(this.mvps, i, -renderCamera.xAngle);
+		}
+	} else {
+		for (let i = 0; i < instancesLength; ++i) {
+			let instance = this.instances[i];
+			mat4ArrayScaleTranslation(this.mvps, i, instance.scale, instance.x, instance.y, instance.z);
+			mat4ArrayRotateRelX(this.mvps, i, instance.xAngle);
+			mat4ArrayRotateRelY(this.mvps, i, instance.yAngle);
+			mat4ArrayRotateRelZ(this.mvps, i, instance.zAngle);
+		}
 	}
 }
 
@@ -170,6 +181,7 @@ RenderVertexArray.prototype.finalizeModels = function() {
 	//gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertices);
 	gl.bufferData(gl.ARRAY_BUFFER, vertices, this.glBufferUsage);
 	
+	gl.bindVertexArray(this.vertexArray);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
 	/*if (this.indexBufferLength < indices.length) {
 		if (this.isDynamic) {

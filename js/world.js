@@ -6,8 +6,8 @@ function WorldChunk(xChunk, yChunk, zChunk) {
 	this.yChunk = yChunk;
 	this.zChunk = zChunk;
 	this.blocks = new Int32Array(16*16*16);
-	this.model = new RenderModel([], [], gl.TRIANGLES);
-	this.model.addInstance(new RenderInstance(xChunk*32, yChunk*32, zChunk*32, 1, 0, 0, 0));
+	this.model = new RenderModel([], [], gl.TRIANGLES, true);
+	this.model.addInstance(new RenderInstance(xChunk*16, yChunk*16, zChunk*16, 1, 0, 0, 0));
 	this.model.finalizeInstances();
 	this.vertexArray = new RenderVertexArray(gl.STATIC_DRAW, gl.UNSIGNED_SHORT);
 	this.vertexArray.addModel(this.model);
@@ -20,17 +20,17 @@ WorldChunk.prototype.updateModel = function() {
 	let frontChunk = worldGetChunk(this.xChunk, this.yChunk, this.zChunk + 1), backChunk = worldGetChunk(this.xChunk, this.yChunk, this.zChunk - 1);
 	
 	for (let x = 0; x < 16; ++x) {
-		let xOffset = x << 1;
-		let xNeg = xOffset - 1, xPos = xOffset + 1;
+		let xOffset = x << 0;
+		let xNeg = xOffset, xPos = xOffset + 1;
 		for (let y = 0; y < 16; ++y) {
-			let yOffset = y << 1;
-			let yNeg = yOffset - 1, yPos = yOffset + 1;
+			let yOffset = y << 0;
+			let yNeg = yOffset, yPos = yOffset + 1;
 			for (let z = 0; z < 16; ++z) {
 				let blockIndex = (x << 8) + (y << 4) + z;
 				let block = blocks[blockIndex];
 				if (block === 0) continue;
-				let zOffset = z << 1;
-				let zNeg = zOffset - 1, zPos = zOffset + 1;
+				let zOffset = z << 0;
+				let zNeg = zOffset, zPos = zOffset + 1;
 				let testBlock;
 				if (z === 15) {
 					if (frontChunk) {
@@ -305,7 +305,17 @@ function worldGetChunk(xChunk, yChunk, zChunk) {
 }
 function worldSetBlock(x, y, z, value) {
 	let chunk = worldGetChunk(x >> 4, y >> 4, z >> 4);
+	if (chunk === null) {
+		return;
+	}
 	chunk.blocks[((x & 0xf) << 8) + ((y & 0xf) << 4) + (z & 0xf)] = value;
+}
+function worldGetBlock(x, y, z) {
+	let chunk = worldGetChunk(x >> 4, y >> 4, z >> 4);
+	if (chunk === null) {
+		return 0;
+	}
+	return chunk.blocks[((x & 0xf) << 8) + ((y & 0xf) << 4) + (z & 0xf)];
 }
 function worldDraw() {
 	let len = worldChunks.length;
@@ -313,6 +323,140 @@ function worldDraw() {
 		let chunk = worldChunks[i];
 		if (chunk) {
 			chunk.vertexArray.drawModels();
+		}
+	}
+}
+function worldUpdateChunksAround(xBlock, yBlock, zBlock) {
+	let xChunk = xBlock >> 4, yChunk = yBlock >> 4, zChunk = zBlock >> 4;
+	let relX = xBlock & 0xf, relY = yBlock & 0xf, relZ = zBlock & 0xf;
+	worldGetChunk(xChunk, yChunk, zChunk).updateModel();
+	if (relX === 0) {
+		let chunk = worldGetChunk(xChunk - 1, yChunk, zChunk);
+		if (chunk !== null) {
+			chunk.updateModel();
+		}
+	} else if (relX === 15) {
+		let chunk = worldGetChunk(xChunk + 1, yChunk, zChunk);
+		if (chunk !== null) {
+			chunk.updateModel();
+		}
+	}
+	if (relY === 0) {
+		let chunk = worldGetChunk(xChunk, yChunk - 1, zChunk);
+		if (chunk !== null) {
+			chunk.updateModel();
+		}
+	} else if (relY === 15) {
+		let chunk = worldGetChunk(xChunk, yChunk + 1, zChunk);
+		if (chunk !== null) {
+			chunk.updateModel();
+		}
+	}
+	if (relZ === 0) {
+		let chunk = worldGetChunk(xChunk, yChunk, zChunk - 1);
+		if (chunk !== null) {
+			chunk.updateModel();
+		}
+	} else if (relZ === 15) {
+		let chunk = worldGetChunk(xChunk, yChunk, zChunk + 1);
+		if (chunk !== null) {
+			chunk.updateModel();
+		}
+	}
+}
+function worldInteractWithBlock(place) {
+	let xAngle = renderCamera.xAngle;
+	let yAngle = renderCamera.yAngle;
+	let cosXAngle = Math.cos(xAngle);
+	let componentZ = -cosXAngle*Math.cos(yAngle);
+	let componentX = -cosXAngle*Math.sin(yAngle);
+	let componentY = Math.sin(xAngle);
+	
+	let x = renderCamera.x;
+	let y = renderCamera.y;
+	let z = renderCamera.z;
+	
+	const maxDistanceSquared = 10*10;
+	let xBlock, yBlock, zBlock;
+	let prevXBlock, prevYBlock, prevZBlock;
+	let nextX, nextY, nextZ;
+	while (true) {
+		let deltaX = x - renderCamera.x, deltaY = y - renderCamera.y, deltaZ = z - renderCamera.z;
+		if (deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ > maxDistanceSquared) {
+			break;
+		}
+		prevXBlock = xBlock;
+		prevYBlock = yBlock;
+		prevZBlock = zBlock;
+		xBlock = Math.floor(x), yBlock = Math.floor(y), zBlock = Math.floor(z);
+		if (componentX < 0) {
+			if (xBlock >= x) {
+				--xBlock;
+			}
+			nextX = xBlock;
+		} else {
+			nextX = xBlock + 1;
+		}
+		if (componentY < 0) {
+			if (yBlock >= y) {
+				--yBlock;
+			}
+			nextY = yBlock;
+		} else {
+			nextY = yBlock + 1;
+		}
+		if (componentZ < 0) {
+			if (zBlock >= z) {
+				--zBlock;
+			}
+			nextZ = zBlock;
+		} else {
+			nextZ = zBlock + 1;
+		}
+
+		if (worldGetBlock(xBlock, yBlock, zBlock) !== 0) {
+			let block, interactX, interactY, interactZ;
+			if (place) {
+				if (prevXBlock === undefined) {
+					break;
+				}
+				block = 1;
+				interactX = prevXBlock;
+				interactY = prevYBlock;
+				interactZ = prevZBlock;
+			} else {
+				block = 0;
+				interactX = xBlock;
+				interactY = yBlock;
+				interactZ = zBlock;
+			}
+			worldSetBlock(interactX, interactY, interactZ, block);
+			worldUpdateChunksAround(interactX, interactY, interactZ);
+			break;
+		}
+		let timeX = (nextX - x)/componentX;
+		let timeY = (nextY - y)/componentY;
+		let timeZ = (nextZ - z)/componentZ;
+		if (timeX < timeY) {
+			if (timeX < timeZ) {
+				x = nextX;
+				y += timeX*componentY;
+				z += timeX*componentZ;
+			} else {
+				z = nextZ;
+				x += timeZ*componentX;
+				y += timeZ*componentY;
+			}
+		} else {
+			if (timeY < timeZ) {
+				y = nextY;
+				x += timeY*componentX;
+				z += timeY*componentZ;
+			} else {
+				z = nextZ;
+				x += timeZ*componentX;
+				y += timeZ*componentY;
+			}
 		}
 	}
 }
@@ -362,7 +506,8 @@ function worldInit(sizeXChunks, sizeYChunks, sizeZChunks) {
 	for (let x = 0; x < worldSizeXChunks*16; ++x) {
 		for (let y = 0; y < worldSizeYChunks*16; ++y) {
 			for (let z = 0; z < worldSizeZChunks*16; ++z) {
-				worldSetBlock(x, y, z, Math.random()*2);
+				//worldSetBlock(x, y, z, Math.random()*2);
+				worldSetBlock(x, y, z, 1);
 			}
 		}
 	}

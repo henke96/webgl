@@ -10,10 +10,11 @@ const gVERTEX_ARRAY_DYNAMIC = 1;
 const gMODEL_NICE_RECT = 0;
 const gMODEL_NICE_TRI = 1;
 const gMODEL_NICE_CUBE = 2;
+const gMODEL_CROSSHAIR = 3;
 
 function gInit() {
-	const near = 0.5;
-	const far = 400;
+	const near = 0.1;
+	const far = 200;
 	const widthRatio = 2; // 90 degrees
 	renderInit(near, far, widthRatio);
 	gKeysDown = {};
@@ -29,12 +30,22 @@ function gInit() {
 	window.requestAnimationFrame(gMainLoop);
 	window.onkeydown = gOnKeyDown;
 	window.onkeyup = gOnKeyUp;
+	
+	gPointerLocked = false;
 	renderCanvas.requestPointerLock = renderCanvas.requestPointerLock || renderCanvas.mozRequestPointerLock;
 	document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock;
 	document.addEventListener("pointerlockchange", gOnPointerLockChange, false);
 	document.addEventListener("mozpointerlockchange", gOnPointerLockChange, false);
-	renderCanvas.onclick = function() {
-		renderCanvas.requestPointerLock();
+	renderCanvas.onmousedown = function(e) {
+		if (!gPointerLocked) {
+			renderCanvas.requestPointerLock();
+		} else {
+			if (e.button === 0) {
+				worldInteractWithBlock(false);
+			} else if (e.button === 2) {
+				worldInteractWithBlock(true);
+			}
+		}
 	}
 }
 var frameCount = 0;
@@ -52,7 +63,7 @@ function gMainLoop(timestamp) {
 	let deltaTime = timestamp - gPrevFrameTimestamp;
 	gPrevFrameTimestamp = timestamp;
 	let leftRight = 0, frontBack = 0, upDown = 0;
-	let speed = 1/100;
+	let speed = 1/200;
 	if (gKeysDown["w"]) frontBack += speed;
 	if (gKeysDown["s"]) frontBack -= speed;
 	if (gKeysDown["d"]) leftRight += speed;
@@ -98,11 +109,12 @@ function gDrawScene() {
 	}
 }
 function gOnPointerLockChange() {
-	if (document.pointerLockElement === renderCanvas || document.mozPointerLockElement === renderCanvas) {
-		document.addEventListener("mousemove", gOnMouseMove, false);
-	} else {
+	if (gPointerLocked) {
 		document.removeEventListener("mousemove", gOnMouseMove, false);
+	} else {
+		document.addEventListener("mousemove", gOnMouseMove, false);
 	}
+	gPointerLocked = !gPointerLocked;
 }
 function gOnMouseMove(e) {
 	gMouseMove.leftRight += e.movementX;
@@ -134,6 +146,10 @@ function gInitObjects() {
 		model.addInstance(new RenderInstance((Math.random() - 0.5)*maxDist, (Math.random() - 0.5)*maxDist, (Math.random() - 0.5)*maxDist, Math.random(), xAngle, yAngle, zAngle));
 	}
 	model.finalizeInstances();
+	
+	model = gModels[gMODEL_CROSSHAIR];
+	model.addInstance(new RenderInstance(0, 0, -0.1, 0.001, 0, 0, 0));
+	model.finalizeInstances();
 }
 function gInitModels() {
 	gModels = [];
@@ -146,7 +162,7 @@ function gInitModels() {
 	let indices = [
 		0, 1, 2, 3
 	];
-	gModels[gMODEL_NICE_RECT] = new RenderModel(vertices, indices, gl.TRIANGLE_STRIP);
+	gModels[gMODEL_NICE_RECT] = new RenderModel(vertices, indices, gl.TRIANGLE_STRIP, true);
 	
 	vertices = [
 		0, 0.5, 0, 0, 1, 1,
@@ -156,7 +172,7 @@ function gInitModels() {
 	indices = [
 		0, 1, 2
 	];
-	gModels[gMODEL_NICE_TRI] = new RenderModel(vertices, indices, gl.TRIANGLES);
+	gModels[gMODEL_NICE_TRI] = new RenderModel(vertices, indices, gl.TRIANGLES, true);
 	
 	vertices = [
 		// Front
@@ -200,11 +216,23 @@ function gInitModels() {
 		16, 17, 18,	18, 17, 19,
 		20, 22, 21, 	21, 22, 23,	
 	];
-	gModels[gMODEL_NICE_CUBE] = new RenderModel(vertices, indices, gl.TRIANGLES);
+	gModels[gMODEL_NICE_CUBE] = new RenderModel(vertices, indices, gl.TRIANGLES, true);
+	
+	vertices = [
+		-0.5, 0.5, 0, 0, 1, 0,
+		-0.5, -0.5, 0, 0, 1, 0,
+		0.5, 0.5, 0, 0, 1, 0,
+		0.5, -0.5, 0, 0, 1, 0,
+	];
+	indices = [
+		0, 1, 2, 3
+	];
+	gModels[gMODEL_CROSSHAIR] = new RenderModel(vertices, indices, gl.TRIANGLE_STRIP, false);
 	
 	gVertexArrays[gVERTEX_ARRAY_STATIC].addModel(gModels[gMODEL_NICE_CUBE]);
 	gVertexArrays[gVERTEX_ARRAY_STATIC].addModel(gModels[gMODEL_NICE_TRI]);
 	gVertexArrays[gVERTEX_ARRAY_STATIC].addModel(gModels[gMODEL_NICE_RECT]);
+	gVertexArrays[gVERTEX_ARRAY_STATIC].addModel(gModels[gMODEL_CROSSHAIR]);
 	gVertexArrays[gVERTEX_ARRAY_STATIC].finalizeModels();
 }
 function gInitVertexArrays() {
@@ -217,4 +245,5 @@ var gVertexArrays;
 var gPrevFrameTimestamp;
 var gKeysDown;
 var gMouseMove;
+var gPointerLocked;
 //}
