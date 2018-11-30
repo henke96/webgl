@@ -219,10 +219,10 @@ function gInitModels() {
 	gModels[gMODEL_NICE_CUBE] = new RenderModel(vertices, indices, gl.TRIANGLES, true);
 	
 	vertices = [
-		-0.5, 0.5, 0, 0, 1, 0,
-		-0.5, -0.5, 0, 0, 1, 0,
-		0.5, 0.5, 0, 0, 1, 0,
-		0.5, -0.5, 0, 0, 1, 0,
+		-0.5, 0.5, 0, 0.2, 0.2, 0.2,
+		-0.5, -0.5, 0, 0.2, 0.2, 0.2,
+		0.5, 0.5, 0, 0.2, 0.2, 0.2,
+		0.5, -0.5, 0, 0.2, 0.2, 0.2,
 	];
 	indices = [
 		0, 1, 2, 3
