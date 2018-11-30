@@ -1,5 +1,5 @@
 'use strict';
-const renderDefaultTestBlock = 0;
+const renderDefaultTestBlock = 1;
 
 function WorldChunk(xChunk, yChunk, zChunk) {
 	this.xChunk = xChunk;
@@ -504,7 +504,7 @@ function worldInit(sizeXChunks, sizeYChunks, sizeZChunks) {
 		}
 	}*/
 	for (let x = 0; x < worldSizeXChunks*16; ++x) {
-		for (let y = 0; y < worldSizeYChunks*16; ++y) {
+		for (let y = 0; y < 64; ++y) {
 			for (let z = 0; z < worldSizeZChunks*16; ++z) {
 				//worldSetBlock(x, y, z, Math.random()*2);
 				worldSetBlock(x, y, z, 1);
