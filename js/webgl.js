@@ -1,5 +1,5 @@
 'use strict';
-window.onload = gInit;
+document.onload = gInit;
 const HTML_CANVAS = "glCanvas";
 
 //{ Game - g
