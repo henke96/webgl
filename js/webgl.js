@@ -31,6 +31,7 @@ function gInit() {
 	window.onkeydown = gOnKeyDown;
 	window.onkeyup = gOnKeyUp;
 	
+	gCurrentBlock = 0;
 	gPointerLocked = false;
 	renderCanvas.requestPointerLock = renderCanvas.requestPointerLock || renderCanvas.mozRequestPointerLock;
 	document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock;
@@ -43,7 +44,9 @@ function gInit() {
 			if (e.button === 0) {
 				worldInteractWithBlock(0);
 			} else if (e.button === 2) {
-				worldInteractWithBlock(blockTYPE_INVERTER);
+				if (gCurrentBlock !== 0) {
+					worldInteractWithBlock(gCurrentBlock);
+				}
 			}
 		}
 	}
@@ -121,7 +124,25 @@ function gOnMouseMove(e) {
 	gMouseMove.upDown += e.movementY;
 }
 function gOnKeyDown(e) {
-	gKeysDown[e.key.toLowerCase()] = true;
+	let character = e.key.toLowerCase();
+	gKeysDown[character] = true;
+	switch (character) {
+	case "1":
+		gCurrentBlock = 0;
+		break;
+	case "2":
+		gCurrentBlock = blockTYPE_DIRT;
+		break;
+	case "3":
+		gCurrentBlock = blockTYPE_WIRE;
+		break;
+	case "4":
+		gCurrentBlock = blockTYPE_INVERTER;
+		break;
+	case "5":
+		gCurrentBlock = blockTYPE_INPUT_OFF;
+		break;
+	}
 }
 function gOnKeyUp(e) {
 	gKeysDown[e.key.toLowerCase()] = false;
@@ -246,4 +267,5 @@ var gPrevFrameTimestamp;
 var gKeysDown;
 var gMouseMove;
 var gPointerLocked;
+var gCurrentBlock;
 //}
