@@ -41,9 +41,9 @@ function gInit() {
 			renderCanvas.requestPointerLock();
 		} else {
 			if (e.button === 0) {
-				worldInteractWithBlock(false);
+				worldInteractWithBlock(0);
 			} else if (e.button === 2) {
-				worldInteractWithBlock(true);
+				worldInteractWithBlock(blockTYPE_INVERTER);
 			}
 		}
 	}

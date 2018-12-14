@@ -202,9 +202,11 @@ RenderVertexArray.prototype.drawModels = function() {
 
 	for (let i = 0; i < modelsLength; ++i) {
 		let model = this.models[i];
-		model.updateMvps();
-		gl.bufferData(gl.ARRAY_BUFFER, model.mvps, gl.STREAM_DRAW);
-		gl.drawElementsInstanced(model.drawOperation, model.indices.length, this.glIndexType, model.startElementOffset, model.instances.length);
+		if (model.instances.length > 0) {
+			model.updateMvps();
+			gl.bufferData(gl.ARRAY_BUFFER, model.mvps, gl.STREAM_DRAW);
+			gl.drawElementsInstanced(model.drawOperation, model.indices.length, this.glIndexType, model.startElementOffset, model.instances.length);
+		}
 	}
 }
 function renderInit(near, far, widthRatio) {

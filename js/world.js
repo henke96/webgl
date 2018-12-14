@@ -6,31 +6,42 @@ function WorldChunk(xChunk, yChunk, zChunk) {
 	this.yChunk = yChunk;
 	this.zChunk = zChunk;
 	this.blocks = new Int32Array(16*16*16);
-	this.model = new RenderModel([], [], gl.TRIANGLES, true);
-	this.model.addInstance(new RenderInstance(xChunk*16, yChunk*16, zChunk*16, 1, 0, 0, 0));
-	this.model.finalizeInstances();
-	this.vertexArray = new RenderVertexArray(gl.STATIC_DRAW, gl.UNSIGNED_SHORT);
-	this.vertexArray.addModel(this.model);
+	this.staticModel = new RenderModel([], [], gl.TRIANGLES, true);
+	this.staticModel.addInstance(new RenderInstance(xChunk*16, yChunk*16, zChunk*16, 1, 0, 0, 0));
+	this.staticModel.finalizeInstances();
+	this.staticVertexArray = new RenderVertexArray(gl.STATIC_DRAW, gl.UNSIGNED_SHORT);
+	this.staticVertexArray.addModel(this.staticModel);
+	this.staticDirty = true;
+	this.dynamicModel = new RenderModel([], [], gl.TRIANGLES, true);
+	this.dynamicModel.addInstance(new RenderInstance(xChunk*16, yChunk*16, zChunk*16, 1, 0, 0, 0));
+	this.dynamicModel.finalizeInstances();
+	this.dynamicVertexArray = new RenderVertexArray(gl.DYNAMIC_DRAW, gl.UNSIGNED_SHORT);
+	this.dynamicVertexArray.addModel(this.dynamicModel);
+	this.dynamicDirty = true;
 }
-WorldChunk.prototype.updateModel = function() {
+WorldChunk.prototype.updateModel = function(dynamic) {
 	let vertexOffset = 0, verticesIndex = 0, indicesIndex = 0;
 	let blocks = this.blocks;
 	let rightChunk = worldGetChunk(this.xChunk + 1, this.yChunk, this.zChunk), leftChunk = worldGetChunk(this.xChunk - 1, this.yChunk, this.zChunk);
 	let upChunk = worldGetChunk(this.xChunk, this.yChunk + 1, this.zChunk), downChunk = worldGetChunk(this.xChunk, this.yChunk - 1, this.zChunk);
 	let frontChunk = worldGetChunk(this.xChunk, this.yChunk, this.zChunk + 1), backChunk = worldGetChunk(this.xChunk, this.yChunk, this.zChunk - 1);
-	
+	let dynamicCheck;
+	if (dynamic) {
+		dynamicCheck = 0;
+		this.dynamicDirty = false;
+	} else {
+		dynamicCheck = blockDYNAMIC_BIT;
+		this.staticDirty = false;
+	}
+	let blockIndex = 0;
 	for (let x = 0; x < 16; ++x) {
-		let xOffset = x << 0;
-		let xNeg = xOffset, xPos = xOffset + 1;
+		let xNeg = x, xPos = x + 1;
 		for (let y = 0; y < 16; ++y) {
-			let yOffset = y << 0;
-			let yNeg = yOffset, yPos = yOffset + 1;
-			for (let z = 0; z < 16; ++z) {
-				let blockIndex = (x << 8) + (y << 4) + z;
+			let yNeg = y, yPos = y + 1;
+			for (let z = 0; z < 16; ++z, ++blockIndex) {
 				let block = blocks[blockIndex];
-				if (block === 0) continue;
-				let zOffset = z << 0;
-				let zNeg = zOffset, zPos = zOffset + 1;
+				if (block === 0 || (block & blockDYNAMIC_BIT) === dynamicCheck) continue;
+				let zNeg = z, zPos = z + 1;
 				let blockType = blockTypes[block];
 				let otherR = blockType.otherR, otherG = blockType.otherG, otherB = blockType.otherB;
 				let testBlock;
@@ -295,9 +306,15 @@ WorldChunk.prototype.updateModel = function() {
 			}
 		}
 	}
-	this.model.vertices = worldVertices.subarray(0, verticesIndex);
-	this.model.indices = worldIndices.subarray(0, indicesIndex);
-	this.vertexArray.finalizeModels();
+	if (dynamic) {
+		this.dynamicModel.vertices = worldVertices.subarray(0, verticesIndex);
+		this.dynamicModel.indices = worldIndices.subarray(0, indicesIndex);
+		this.dynamicVertexArray.finalizeModels();
+	} else {
+		this.staticModel.vertices = worldVertices.subarray(0, verticesIndex);
+		this.staticModel.indices = worldIndices.subarray(0, indicesIndex);
+		this.staticVertexArray.finalizeModels();
+	}
 }
 function worldGetChunk(xChunk, yChunk, zChunk) {
 	if (xChunk < 0 || xChunk >= worldSizeXChunks || yChunk < 0 || yChunk >= worldSizeYChunks || zChunk < 0 || zChunk >= worldSizeZChunks) {
@@ -310,6 +327,7 @@ function worldSetBlock(x, y, z, value) {
 	if (chunk === null) {
 		return;
 	}
+	worldDirtyChunksAround(x, y, z);
 	chunk.blocks[((x & 0xf) << 8) + ((y & 0xf) << 4) + (z & 0xf)] = value;
 }
 function worldGetBlock(x, y, z) {
@@ -324,49 +342,64 @@ function worldDraw() {
 	for (let i = 0; i < len; ++i) {
 		let chunk = worldChunks[i];
 		if (chunk) {
-			chunk.vertexArray.drawModels();
+			if (chunk.staticDirty) {
+				chunk.updateModel(false);
+			}
+			chunk.staticVertexArray.drawModels();
+			if (chunk.dynamicDirty) {
+				chunk.updateModel(true);
+			}
+			chunk.dynamicVertexArray.drawModels();
 		}
 	}
 }
-function worldUpdateChunksAround(xBlock, yBlock, zBlock) {
+function worldDirtyChunksAround(xBlock, yBlock, zBlock) {
 	let xChunk = xBlock >> 4, yChunk = yBlock >> 4, zChunk = zBlock >> 4;
 	let relX = xBlock & 0xf, relY = yBlock & 0xf, relZ = zBlock & 0xf;
-	worldGetChunk(xChunk, yChunk, zChunk).updateModel();
+	let selfChunk = worldGetChunk(xChunk, yChunk, zChunk);
+	selfChunk.dynamicDirty = true;
+	selfChunk.staticDirty = true;
 	if (relX === 0) {
 		let chunk = worldGetChunk(xChunk - 1, yChunk, zChunk);
 		if (chunk !== null) {
-			chunk.updateModel();
+			chunk.dynamicDirty = true;
+			chunk.staticDirty = true;
 		}
 	} else if (relX === 15) {
 		let chunk = worldGetChunk(xChunk + 1, yChunk, zChunk);
 		if (chunk !== null) {
-			chunk.updateModel();
+			chunk.dynamicDirty = true;
+			chunk.staticDirty = true;
 		}
 	}
 	if (relY === 0) {
 		let chunk = worldGetChunk(xChunk, yChunk - 1, zChunk);
 		if (chunk !== null) {
-			chunk.updateModel();
+			chunk.dynamicDirty = true;
+			chunk.staticDirty = true;
 		}
 	} else if (relY === 15) {
 		let chunk = worldGetChunk(xChunk, yChunk + 1, zChunk);
 		if (chunk !== null) {
-			chunk.updateModel();
+			chunk.dynamicDirty = true;
+			chunk.staticDirty = true;
 		}
 	}
 	if (relZ === 0) {
 		let chunk = worldGetChunk(xChunk, yChunk, zChunk - 1);
 		if (chunk !== null) {
-			chunk.updateModel();
+			chunk.dynamicDirty = true;
+			chunk.staticDirty = true;
 		}
 	} else if (relZ === 15) {
 		let chunk = worldGetChunk(xChunk, yChunk, zChunk + 1);
 		if (chunk !== null) {
-			chunk.updateModel();
+			chunk.dynamicDirty = true;
+			chunk.staticDirty = true;
 		}
 	}
 }
-function worldInteractWithBlock(place) {
+function worldInteractWithBlock(block) {
 	let xAngle = renderCamera.xAngle;
 	let yAngle = renderCamera.yAngle;
 	let cosXAngle = Math.cos(xAngle);
@@ -378,7 +411,7 @@ function worldInteractWithBlock(place) {
 	let y = renderCamera.y;
 	let z = renderCamera.z;
 	
-	const maxDistanceSquared = 10*10;
+	const maxDistanceSquared = 5*5;
 	let xBlock, yBlock, zBlock;
 	let prevXBlock, prevYBlock, prevZBlock;
 	let nextX, nextY, nextZ;
@@ -417,23 +450,20 @@ function worldInteractWithBlock(place) {
 		}
 
 		if (worldGetBlock(xBlock, yBlock, zBlock) !== 0) {
-			let block, interactX, interactY, interactZ;
-			if (place) {
+			let interactX, interactY, interactZ;
+			if (block !== 0) {
 				if (prevXBlock === undefined) {
 					break;
 				}
-				block = 1;
 				interactX = prevXBlock;
 				interactY = prevYBlock;
 				interactZ = prevZBlock;
 			} else {
-				block = 0;
 				interactX = xBlock;
 				interactY = yBlock;
 				interactZ = zBlock;
 			}
 			worldSetBlock(interactX, interactY, interactZ, block);
-			worldUpdateChunksAround(interactX, interactY, interactZ);
 			break;
 		}
 		let timeX = (nextX - x)/componentX;
@@ -515,12 +545,6 @@ function worldInit(sizeXChunks, sizeYChunks, sizeZChunks) {
 					worldSetBlock(x, y, z, blockTYPE_DIRT);
 				}
 			}
-		}
-	}
-	for (let i = 0; i < worldChunks.length; ++i) {
-		let chunk = worldChunks[i];
-		if (chunk) {
-			chunk.updateModel();
 		}
 	}
 }
