@@ -35,13 +35,13 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 	}
 	let blockIndex = 0;
 	for (let x = 0; x < 16; ++x) {
-		let xNeg = x, xPos = x + 1;
+		let xPos = x + 1;
 		for (let y = 0; y < 16; ++y) {
-			let yNeg = y, yPos = y + 1;
+			let yPos = y + 1;
 			for (let z = 0; z < 16; ++z, ++blockIndex) {
 				let block = blocks[blockIndex];
 				if (block === 0 || (block & blockDYNAMIC_BIT) === dynamicCheck) continue;
-				let zNeg = z, zPos = z + 1;
+				let zPos = z + 1;
 				let blockType = blockTypes[block];
 				let otherR = blockType.otherR, otherG = blockType.otherG, otherB = blockType.otherB;
 				let testBlock;
@@ -56,14 +56,14 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 				}
 				if (testBlock === 0) {
 					//z face
-					worldVertices[verticesIndex++] = xNeg;
+					worldVertices[verticesIndex++] = x;
 					worldVertices[verticesIndex++] = yPos;
 					worldVertices[verticesIndex++] = zPos;
 					worldVertices[verticesIndex++] = otherR + 0.06;
 					worldVertices[verticesIndex++] = otherG + 0.06;
 					worldVertices[verticesIndex++] = otherB + 0.06;
-					worldVertices[verticesIndex++] = xNeg;
-					worldVertices[verticesIndex++] = yNeg;
+					worldVertices[verticesIndex++] = x;
+					worldVertices[verticesIndex++] = y;
 					worldVertices[verticesIndex++] = zPos;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
@@ -75,7 +75,7 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 					worldVertices[verticesIndex++] = otherG;
 					worldVertices[verticesIndex++] = otherB;
 					worldVertices[verticesIndex++] = xPos;
-					worldVertices[verticesIndex++] = yNeg;
+					worldVertices[verticesIndex++] = y;
 					worldVertices[verticesIndex++] = zPos;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
@@ -99,27 +99,27 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 				}
 				if (testBlock === 0) {
 					//-z face
-					worldVertices[verticesIndex++] = xNeg;
+					worldVertices[verticesIndex++] = x;
 					worldVertices[verticesIndex++] = yPos;
-					worldVertices[verticesIndex++] = zNeg;
+					worldVertices[verticesIndex++] = z;
 					worldVertices[verticesIndex++] = otherR + 0.06;
 					worldVertices[verticesIndex++] = otherG + 0.06;
 					worldVertices[verticesIndex++] = otherB + 0.06;
-					worldVertices[verticesIndex++] = xNeg;
-					worldVertices[verticesIndex++] = yNeg;
-					worldVertices[verticesIndex++] = zNeg;
+					worldVertices[verticesIndex++] = x;
+					worldVertices[verticesIndex++] = y;
+					worldVertices[verticesIndex++] = z;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
 					worldVertices[verticesIndex++] = otherB;
 					worldVertices[verticesIndex++] = xPos;
 					worldVertices[verticesIndex++] = yPos;
-					worldVertices[verticesIndex++] = zNeg;
+					worldVertices[verticesIndex++] = z;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
 					worldVertices[verticesIndex++] = otherB;
 					worldVertices[verticesIndex++] = xPos;
-					worldVertices[verticesIndex++] = yNeg;
-					worldVertices[verticesIndex++] = zNeg;
+					worldVertices[verticesIndex++] = y;
+					worldVertices[verticesIndex++] = z;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
 					worldVertices[verticesIndex++] = otherB;
@@ -142,13 +142,13 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 				}
 				if (testBlock === 0) {
 					//y face
-					worldVertices[verticesIndex++] = xNeg;
+					worldVertices[verticesIndex++] = x;
 					worldVertices[verticesIndex++] = yPos;
-					worldVertices[verticesIndex++] = zNeg;
+					worldVertices[verticesIndex++] = z;
 					worldVertices[verticesIndex++] = blockType.upR + 0.06;
 					worldVertices[verticesIndex++] = blockType.upG + 0.06;
 					worldVertices[verticesIndex++] = blockType.upB + 0.06;
-					worldVertices[verticesIndex++] = xNeg;
+					worldVertices[verticesIndex++] = x;
 					worldVertices[verticesIndex++] = yPos;
 					worldVertices[verticesIndex++] = zPos;
 					worldVertices[verticesIndex++] = blockType.upR;
@@ -156,7 +156,7 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 					worldVertices[verticesIndex++] = blockType.upB;
 					worldVertices[verticesIndex++] = xPos;
 					worldVertices[verticesIndex++] = yPos;
-					worldVertices[verticesIndex++] = zNeg;
+					worldVertices[verticesIndex++] = z;
 					worldVertices[verticesIndex++] = blockType.upR;
 					worldVertices[verticesIndex++] = blockType.upG;
 					worldVertices[verticesIndex++] = blockType.upB;
@@ -185,26 +185,26 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 				}
 				if (testBlock === 0) {
 					//-y face
-					worldVertices[verticesIndex++] = xNeg;
-					worldVertices[verticesIndex++] = yNeg;
-					worldVertices[verticesIndex++] = zNeg;
+					worldVertices[verticesIndex++] = x;
+					worldVertices[verticesIndex++] = y;
+					worldVertices[verticesIndex++] = z;
 					worldVertices[verticesIndex++] = otherR + 0.06;
 					worldVertices[verticesIndex++] = otherG + 0.06;
 					worldVertices[verticesIndex++] = otherB + 0.06;
-					worldVertices[verticesIndex++] = xNeg;
-					worldVertices[verticesIndex++] = yNeg;
+					worldVertices[verticesIndex++] = x;
+					worldVertices[verticesIndex++] = y;
 					worldVertices[verticesIndex++] = zPos;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
 					worldVertices[verticesIndex++] = otherB;
 					worldVertices[verticesIndex++] = xPos;
-					worldVertices[verticesIndex++] = yNeg;
-					worldVertices[verticesIndex++] = zNeg;
+					worldVertices[verticesIndex++] = y;
+					worldVertices[verticesIndex++] = z;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
 					worldVertices[verticesIndex++] = otherB;
 					worldVertices[verticesIndex++] = xPos;
-					worldVertices[verticesIndex++] = yNeg;
+					worldVertices[verticesIndex++] = y;
 					worldVertices[verticesIndex++] = zPos;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
@@ -235,20 +235,20 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 					worldVertices[verticesIndex++] = otherG + 0.06;
 					worldVertices[verticesIndex++] = otherB + 0.06;
 					worldVertices[verticesIndex++] = xPos;
-					worldVertices[verticesIndex++] = yNeg;
+					worldVertices[verticesIndex++] = y;
 					worldVertices[verticesIndex++] = zPos;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
 					worldVertices[verticesIndex++] = otherB;
 					worldVertices[verticesIndex++] = xPos;
 					worldVertices[verticesIndex++] = yPos;
-					worldVertices[verticesIndex++] = zNeg;
+					worldVertices[verticesIndex++] = z;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
 					worldVertices[verticesIndex++] = otherB;
 					worldVertices[verticesIndex++] = xPos;
-					worldVertices[verticesIndex++] = yNeg;
-					worldVertices[verticesIndex++] = zNeg;
+					worldVertices[verticesIndex++] = y;
+					worldVertices[verticesIndex++] = z;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
 					worldVertices[verticesIndex++] = otherB;
@@ -271,27 +271,27 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 				}
 				if (testBlock === 0) {
 					//-x face
-					worldVertices[verticesIndex++] = xNeg;
+					worldVertices[verticesIndex++] = x;
 					worldVertices[verticesIndex++] = yPos;
 					worldVertices[verticesIndex++] = zPos;
 					worldVertices[verticesIndex++] = otherR + 0.06;
 					worldVertices[verticesIndex++] = otherG + 0.06;
 					worldVertices[verticesIndex++] = otherB + 0.06;
-					worldVertices[verticesIndex++] = xNeg;
-					worldVertices[verticesIndex++] = yNeg;
+					worldVertices[verticesIndex++] = x;
+					worldVertices[verticesIndex++] = y;
 					worldVertices[verticesIndex++] = zPos;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
 					worldVertices[verticesIndex++] = otherB;
-					worldVertices[verticesIndex++] = xNeg;
+					worldVertices[verticesIndex++] = x;
 					worldVertices[verticesIndex++] = yPos;
-					worldVertices[verticesIndex++] = zNeg;
+					worldVertices[verticesIndex++] = z;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
 					worldVertices[verticesIndex++] = otherB;
-					worldVertices[verticesIndex++] = xNeg;
-					worldVertices[verticesIndex++] = yNeg;
-					worldVertices[verticesIndex++] = zNeg;
+					worldVertices[verticesIndex++] = x;
+					worldVertices[verticesIndex++] = y;
+					worldVertices[verticesIndex++] = z;
 					worldVertices[verticesIndex++] = otherR;
 					worldVertices[verticesIndex++] = otherG;
 					worldVertices[verticesIndex++] = otherB;
