@@ -226,8 +226,7 @@ function logicFindConnections(x, y, z, wireType, blockType, list) {
 				if (blockDown === wireType) {
 					availableBranches |= logicDOWN_BIT;
 				} else if ((blockDown & blockNO_STATE_MASK) === blockType) {
-					if (worldGetBlock(x, y, z) === wireType)
-						logicPushIfUnique(list, {x: x, y: y - 1, z: z});
+					logicPushIfUnique(list, {x: x, y: y - 1, z: z});
 				}
 			}
 		}
