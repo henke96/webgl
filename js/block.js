@@ -1,14 +1,17 @@
 'use strict';
-const blockDYNAMIC_BIT = 0x70000000;
+const blockDYNAMIC_BIT = 0x80000000;
+const blockDYNAMIC_STATE_BIT = 0x40000000;
+const blockDYNAMIC_NO_STATE_MASK = ~blockDYNAMIC_STATE_BIT;
 // Static
 const blockTYPE_NONE = 0;
 const blockTYPE_GRASS = 1;
 const blockTYPE_DIRT = 2;
-const blockTYPE_WIRE = 3;
-const blockTYPE_INVERTER = 4;
+const blockTYPE_WIRE1 = 3;
+const blockTYPE_WIRE2 = 3;
+const blockTYPE_INVERTER = 5;
 // Dynamic
-const blockTYPE_INPUT_ON = blockDYNAMIC_BIT + 0;
-const blockTYPE_INPUT_OFF = blockDYNAMIC_BIT + 1;
+const blockTYPE_OUTPUT_ON = blockDYNAMIC_BIT | blockDYNAMIC_STATE_BIT | 0;
+const blockTYPE_OUTPUT_OFF = blockDYNAMIC_BIT | 0;
 
 let blockTypes = [];
 
@@ -28,12 +31,20 @@ blockTypes[blockTYPE_DIRT] = {
 	otherG: 0.23,
 	otherB: 0.05		
 };
-blockTypes[blockTYPE_WIRE] = {
+blockTypes[blockTYPE_WIRE1] = {
 	upR: 0.5,
 	upG: 0.5,
 	upB: 0.5,
 	otherR: 0.5,
 	otherG: 0.5,
+	otherB: 0.5	
+};
+blockTypes[blockTYPE_WIRE2] = {
+	upR: 0.2,
+	upG: 0.2,
+	upB: 0.5,
+	otherR: 0.2,
+	otherG: 0.2,
 	otherB: 0.5	
 };
 blockTypes[blockTYPE_INVERTER] = {
@@ -44,7 +55,7 @@ blockTypes[blockTYPE_INVERTER] = {
 	otherG: 0.9,
 	otherB: 0.9	
 };
-blockTypes[blockTYPE_INPUT_ON] = {
+blockTypes[blockTYPE_OUTPUT_ON] = {
 	upR: 1,
 	upG: 0.2,
 	upB: 0.2,
@@ -52,7 +63,7 @@ blockTypes[blockTYPE_INPUT_ON] = {
 	otherG: 0.2,
 	otherB: 0.2	
 };
-blockTypes[blockTYPE_INPUT_OFF] = {
+blockTypes[blockTYPE_OUTPUT_OFF] = {
 	upR: 0.2,
 	upG: 0.2,
 	upB: 0.2,

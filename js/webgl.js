@@ -43,6 +43,11 @@ function gInit() {
 		} else {
 			if (e.button === 0) {
 				worldInteractWithBlock(0);
+			} else if (e.button === 1) {
+				let testList = [];
+				console.log(Math.trunc(renderCamera.x) + ", " + Math.trunc(renderCamera.y) + ", " + Math.trunc(renderCamera.z))
+				logicAddConnectedOutputs(Math.trunc(renderCamera.x), Math.trunc(renderCamera.y), Math.trunc(renderCamera.z), testList);
+				console.log(testList);
 			} else if (e.button === 2) {
 				if (gCurrentBlock !== 0) {
 					worldInteractWithBlock(gCurrentBlock);
@@ -56,8 +61,8 @@ var frameCountStartTime = performance.now();
 var avgFrameTime = 0;
 function gMainLoop(timestamp) {
 	if (timestamp - frameCountStartTime >= 1000) {
-		console.log("FPS: " + frameCount*1000/(timestamp - frameCountStartTime));
-		console.log("Frametime: " + avgFrameTime);
+		//console.log("FPS: " + frameCount*1000/(timestamp - frameCountStartTime));
+		//console.log("Frametime: " + avgFrameTime);
 		frameCountStartTime = timestamp;
 		frameCount = 0;
 	}
@@ -134,13 +139,13 @@ function gOnKeyDown(e) {
 		gCurrentBlock = blockTYPE_DIRT;
 		break;
 	case "3":
-		gCurrentBlock = blockTYPE_WIRE;
+		gCurrentBlock = blockTYPE_WIRE1;
 		break;
 	case "4":
 		gCurrentBlock = blockTYPE_INVERTER;
 		break;
 	case "5":
-		gCurrentBlock = blockTYPE_INPUT_OFF;
+		gCurrentBlock = blockTYPE_OUTPUT_OFF;
 		break;
 	}
 }
