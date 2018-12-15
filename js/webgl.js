@@ -25,6 +25,7 @@ function gInit() {
 	gInitVertexArrays();
 	gInitModels();
 	gInitObjects();
+	logicInit();
 	worldInit(10, 10, 10);
 	gPrevFrameTimestamp = performance.now();
 	window.requestAnimationFrame(gMainLoop);
@@ -42,15 +43,63 @@ function gInit() {
 			renderCanvas.requestPointerLock();
 		} else {
 			if (e.button === 0) {
-				worldInteractWithBlock(0);
+				let pos = worldGetInteractPos(false);
+				if (pos !== null) {
+					let oldBlock = worldGetBlock(pos.x, pos.y, pos.z);
+					worldSetBlock(pos.x, pos.y, pos.z, 0);
+					if ((oldBlock & blockNO_STATE_MASK) === blockTYPE_WIRE1) {
+						logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, oldBlock);
+					} else if ((oldBlock & blockNO_STATE_MASK) === blockTYPE_INVERTER) {
+						// TODO: Could benefit from chunk structure
+						let index;
+						for (let i = 0; i < logicLogicObjects.length; ++i) {
+							let logicObject = logicLogicObjects[i];
+							if (logicObject.x === pos.x && logicObject.y === pos.y && logicObject.z === pos.z) {
+								index = i;
+								break;
+							}
+						}
+						logicLogicObjects.splice(index, 1);
+						logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z);
+					} else if ((oldBlock & blockNO_STATE_MASK) === blockTYPE_OUTPUT_OFF) {
+						// TODO: Could benefit from chunk structure
+						let index;
+						for (let i = 0; i < logicOutputObjects.length; ++i) {
+							let outputObject = logicOutputObjects[i];
+							if (outputObject.x === pos.x && outputObject.y === pos.y && outputObject.z === pos.z) {
+								index = i;
+								break;
+							}
+						}
+						logicOutputObjects.splice(index, 1);
+						logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, 0);
+					}
+				}
 			} else if (e.button === 1) {
-				let testList = [];
-				console.log(Math.trunc(renderCamera.x) + ", " + Math.trunc(renderCamera.y) + ", " + Math.trunc(renderCamera.z))
-				logicAddConnectedOutputs(Math.trunc(renderCamera.x), Math.trunc(renderCamera.y), Math.trunc(renderCamera.z), testList);
-				console.log(testList);
+				let pos = worldGetInteractPos(false);
+				if (pos !== null) {
+					gCurrentBlock = worldGetBlock(pos.x, pos.y, pos.z);
+				}
 			} else if (e.button === 2) {
 				if (gCurrentBlock !== 0) {
-					worldInteractWithBlock(gCurrentBlock);
+					let pos = worldGetInteractPos(true);
+					if (pos !== null) {
+						worldSetBlock(pos.x, pos.y, pos.z, gCurrentBlock);
+						if ((gCurrentBlock & blockNO_STATE_MASK) === blockTYPE_WIRE1) {
+							logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, gCurrentBlock);
+						} else if (gCurrentBlock === blockTYPE_INVERTER) {
+							let logicObject = new LogicInverter(pos.x, pos.y, pos.z, 0);
+							logicLogicObjects.push(logicObject);
+							logicCompileLogicObject(logicObject);
+							logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z);
+						} else if (gCurrentBlock === blockTYPE_OUTPUT_OFF) {
+							let outputObject = new LogicOutput(pos.x, pos.y, pos.z, 0);
+							logicOutputObjects.push(outputObject);
+							logicCompileOutputObject(outputObject);
+							// TODO: this also compiles neighbouring logic objects (not actually connected)
+							logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, 0);
+						}
+					}
 				}
 			}
 		}
@@ -103,7 +152,8 @@ function gMainLoop(timestamp) {
 		cubeModel.instances[i].yAngle += (Math.random() - 0.5)/8;
 		cubeModel.instances[i].zAngle += (Math.random() - 0.5)/8;
 	}
-	
+	logicUpdateLogicObjects();
+	logicUpdateOutputObjects();
 	gDrawScene();
 	window.requestAnimationFrame(gMainLoop);
 	avgFrameTime += (performance.now() - timestamp - avgFrameTime)/60;
@@ -132,20 +182,23 @@ function gOnKeyDown(e) {
 	let character = e.key.toLowerCase();
 	gKeysDown[character] = true;
 	switch (character) {
-	case "1":
+	case "0":
 		gCurrentBlock = 0;
 		break;
+	case "1":
+		gCurrentBlock = blockTYPE_OUTPUT_OFF;
+		break;
 	case "2":
-		gCurrentBlock = blockTYPE_DIRT;
-		break;
-	case "3":
-		gCurrentBlock = blockTYPE_WIRE1;
-		break;
-	case "4":
 		gCurrentBlock = blockTYPE_INVERTER;
 		break;
+	case "3":
+		gCurrentBlock = blockTYPE_DIRT;
+		break;
+	case "4":
+		gCurrentBlock = blockTYPE_WIRE1;
+		break;
 	case "5":
-		gCurrentBlock = blockTYPE_OUTPUT_OFF;
+		gCurrentBlock = blockTYPE_WIRE2;
 		break;
 	}
 }

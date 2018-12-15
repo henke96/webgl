@@ -1,16 +1,17 @@
 'use strict';
 const blockDYNAMIC_BIT = 0x80000000;
-const blockDYNAMIC_STATE_BIT = 0x40000000;
-const blockDYNAMIC_NO_STATE_MASK = ~blockDYNAMIC_STATE_BIT;
+const blockOUTPUT_STATE_BIT = 0x40000000;
+const blockWIRE_STATE_BIT = 0x40000000;
+const blockNO_STATE_MASK = 0x8FFFFFFF;
 // Static
 const blockTYPE_NONE = 0;
 const blockTYPE_GRASS = 1;
 const blockTYPE_DIRT = 2;
 const blockTYPE_WIRE1 = 3;
-const blockTYPE_WIRE2 = 3;
+const blockTYPE_WIRE2 = blockWIRE_STATE_BIT | 3;
 const blockTYPE_INVERTER = 5;
 // Dynamic
-const blockTYPE_OUTPUT_ON = blockDYNAMIC_BIT | blockDYNAMIC_STATE_BIT | 0;
+const blockTYPE_OUTPUT_ON = blockDYNAMIC_BIT | blockOUTPUT_STATE_BIT | 0;
 const blockTYPE_OUTPUT_OFF = blockDYNAMIC_BIT | 0;
 
 let blockTypes = [];

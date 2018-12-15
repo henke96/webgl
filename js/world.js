@@ -1,6 +1,7 @@
 'use strict';
-const renderDefaultTestBlock = 1;
-
+const worldDefaultTestBlock = 1;
+const worldDIRTY_STATIC_BIT = 0x1;
+const worldDIRTY_DYNAMIC_BIT = 0x2;
 function WorldChunk(xChunk, yChunk, zChunk) {
 	this.xChunk = xChunk;
 	this.yChunk = yChunk;
@@ -11,13 +12,12 @@ function WorldChunk(xChunk, yChunk, zChunk) {
 	this.staticModel.finalizeInstances();
 	this.staticVertexArray = new RenderVertexArray(gl.STATIC_DRAW, gl.UNSIGNED_SHORT);
 	this.staticVertexArray.addModel(this.staticModel);
-	this.staticDirty = true;
 	this.dynamicModel = new RenderModel([], [], gl.TRIANGLES, true);
 	this.dynamicModel.addInstance(new RenderInstance(xChunk*16, yChunk*16, zChunk*16, 1, 0, 0, 0));
 	this.dynamicModel.finalizeInstances();
 	this.dynamicVertexArray = new RenderVertexArray(gl.DYNAMIC_DRAW, gl.UNSIGNED_SHORT);
 	this.dynamicVertexArray.addModel(this.dynamicModel);
-	this.dynamicDirty = true;
+	this.dirty = worldDIRTY_STATIC_BIT | worldDIRTY_DYNAMIC_BIT;
 }
 WorldChunk.prototype.updateModel = function(dynamic) {
 	let vertexOffset = 0, verticesIndex = 0, indicesIndex = 0;
@@ -28,10 +28,10 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 	let dynamicCheck;
 	if (dynamic) {
 		dynamicCheck = 0;
-		this.dynamicDirty = false;
+		this.dirty &= ~worldDIRTY_DYNAMIC_BIT;
 	} else {
 		dynamicCheck = blockDYNAMIC_BIT;
-		this.staticDirty = false;
+		this.dirty &= ~worldDIRTY_STATIC_BIT;
 	}
 	let blockIndex = 0;
 	for (let x = 0; x < 16; ++x) {
@@ -49,7 +49,7 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 					if (frontChunk) {
 						testBlock = frontChunk.blocks[blockIndex - 15];
 					} else {
-						testBlock = renderDefaultTestBlock;
+						testBlock = worldDefaultTestBlock;
 					}
 				} else {
 					testBlock = blocks[blockIndex + 1];
@@ -92,7 +92,7 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 					if (backChunk) {
 						testBlock = backChunk.blocks[blockIndex + 15];
 					} else {
-						testBlock = renderDefaultTestBlock;
+						testBlock = worldDefaultTestBlock;
 					}
 				} else {
 					testBlock = blocks[blockIndex - 1];
@@ -135,7 +135,7 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 					if (upChunk) {
 						testBlock = upChunk.blocks[blockIndex - 240];
 					} else {
-						testBlock = renderDefaultTestBlock;
+						testBlock = worldDefaultTestBlock;
 					}
 				} else {
 					testBlock = blocks[blockIndex + 16];
@@ -178,7 +178,7 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 					if (downChunk) {
 						testBlock = downChunk.blocks[blockIndex + 240];
 					} else {
-						testBlock = renderDefaultTestBlock;
+						testBlock = worldDefaultTestBlock;
 					}
 				} else {
 					testBlock = blocks[blockIndex - 16];
@@ -221,7 +221,7 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 					if (rightChunk) {
 						testBlock = rightChunk.blocks[blockIndex - 3840];
 					} else {
-						testBlock = renderDefaultTestBlock;
+						testBlock = worldDefaultTestBlock;
 					}
 				} else {
 					testBlock = blocks[blockIndex + 256];
@@ -264,7 +264,7 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 					if (leftChunk) {
 						testBlock = leftChunk.blocks[blockIndex + 3840];
 					} else {
-						testBlock = renderDefaultTestBlock;
+						testBlock = worldDefaultTestBlock;
 					}
 				} else {
 					testBlock = blocks[blockIndex - 256];
@@ -330,6 +330,14 @@ function worldSetBlock(x, y, z, value) {
 	worldDirtyChunksAround(x, y, z);
 	chunk.blocks[((x & 0xf) << 8) + ((y & 0xf) << 4) + (z & 0xf)] = value;
 }
+function worldUpdateBlock(x, y, z, value) {
+	let chunk = worldGetChunk(x >> 4, y >> 4, z >> 4);
+	if (chunk === null) {
+		return;
+	}
+	chunk.dirty |= worldDIRTY_DYNAMIC_BIT;
+	chunk.blocks[((x & 0xf) << 8) + ((y & 0xf) << 4) + (z & 0xf)] = value;
+}
 function worldGetBlock(x, y, z) {
 	let chunk = worldGetChunk(x >> 4, y >> 4, z >> 4);
 	if (chunk === null) {
@@ -342,11 +350,11 @@ function worldDraw() {
 	for (let i = 0; i < len; ++i) {
 		let chunk = worldChunks[i];
 		if (chunk) {
-			if (chunk.staticDirty) {
+			if ((chunk.dirty & worldDIRTY_STATIC_BIT) !== 0) {
 				chunk.updateModel(false);
 			}
 			chunk.staticVertexArray.drawModels();
-			if (chunk.dynamicDirty) {
+			if ((chunk.dirty & worldDIRTY_DYNAMIC_BIT) !== 0) {
 				chunk.updateModel(true);
 			}
 			chunk.dynamicVertexArray.drawModels();
@@ -357,49 +365,43 @@ function worldDirtyChunksAround(xBlock, yBlock, zBlock) {
 	let xChunk = xBlock >> 4, yChunk = yBlock >> 4, zChunk = zBlock >> 4;
 	let relX = xBlock & 0xf, relY = yBlock & 0xf, relZ = zBlock & 0xf;
 	let selfChunk = worldGetChunk(xChunk, yChunk, zChunk);
-	selfChunk.dynamicDirty = true;
-	selfChunk.staticDirty = true;
+	let dirtyBits = worldDIRTY_STATIC_BIT | worldDIRTY_DYNAMIC_BIT;
+	selfChunk.dirty |= dirtyBits;
 	if (relX === 0) {
 		let chunk = worldGetChunk(xChunk - 1, yChunk, zChunk);
 		if (chunk !== null) {
-			chunk.dynamicDirty = true;
-			chunk.staticDirty = true;
+			chunk.dirty |= dirtyBits;
 		}
 	} else if (relX === 15) {
 		let chunk = worldGetChunk(xChunk + 1, yChunk, zChunk);
 		if (chunk !== null) {
-			chunk.dynamicDirty = true;
-			chunk.staticDirty = true;
+			chunk.dirty |= dirtyBits;
 		}
 	}
 	if (relY === 0) {
 		let chunk = worldGetChunk(xChunk, yChunk - 1, zChunk);
 		if (chunk !== null) {
-			chunk.dynamicDirty = true;
-			chunk.staticDirty = true;
+			chunk.dirty |= dirtyBits;
 		}
 	} else if (relY === 15) {
 		let chunk = worldGetChunk(xChunk, yChunk + 1, zChunk);
 		if (chunk !== null) {
-			chunk.dynamicDirty = true;
-			chunk.staticDirty = true;
+			chunk.dirty |= dirtyBits;
 		}
 	}
 	if (relZ === 0) {
 		let chunk = worldGetChunk(xChunk, yChunk, zChunk - 1);
 		if (chunk !== null) {
-			chunk.dynamicDirty = true;
-			chunk.staticDirty = true;
+			chunk.dirty |= dirtyBits;
 		}
 	} else if (relZ === 15) {
 		let chunk = worldGetChunk(xChunk, yChunk, zChunk + 1);
 		if (chunk !== null) {
-			chunk.dynamicDirty = true;
-			chunk.staticDirty = true;
+			chunk.dirty |= dirtyBits;
 		}
 	}
 }
-function worldInteractWithBlock(block) {
+function worldGetInteractPos(infront) {
 	let xAngle = renderCamera.xAngle;
 	let yAngle = renderCamera.yAngle;
 	let cosXAngle = Math.cos(xAngle);
@@ -418,7 +420,7 @@ function worldInteractWithBlock(block) {
 	while (true) {
 		let deltaX = x - renderCamera.x, deltaY = y - renderCamera.y, deltaZ = z - renderCamera.z;
 		if (deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ > maxDistanceSquared) {
-			break;
+			return null;
 		}
 		prevXBlock = xBlock;
 		prevYBlock = yBlock;
@@ -451,20 +453,14 @@ function worldInteractWithBlock(block) {
 
 		if (worldGetBlock(xBlock, yBlock, zBlock) !== 0) {
 			let interactX, interactY, interactZ;
-			if (block !== 0) {
+			if (infront) {
 				if (prevXBlock === undefined) {
-					break;
+					return null;
 				}
-				interactX = prevXBlock;
-				interactY = prevYBlock;
-				interactZ = prevZBlock;
+				return {x: prevXBlock, y: prevYBlock, z: prevZBlock};
 			} else {
-				interactX = xBlock;
-				interactY = yBlock;
-				interactZ = zBlock;
+				return {x: xBlock, y: yBlock, z: zBlock};
 			}
-			worldSetBlock(interactX, interactY, interactZ, block);
-			break;
 		}
 		let timeX = (nextX - x)/componentX;
 		let timeY = (nextY - y)/componentY;
