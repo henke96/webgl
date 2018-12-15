@@ -78,8 +78,6 @@ function logicCompileLogicObject(logicObject) {
 			}
 		}
 	}
-	console.log("Compiled logic object at (" + x + ", " + y + ", " + z + "):");
-	console.log(logicObject.inputs);
 }
 function logicCompileConnectedLogicObjects(x, y, z, wireType) {
 	let connected = [];

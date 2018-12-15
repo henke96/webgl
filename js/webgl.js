@@ -110,7 +110,7 @@ var frameCountStartTime = performance.now();
 var avgFrameTime = 0;
 function gMainLoop(timestamp) {
 	if (timestamp - frameCountStartTime >= 1000) {
-		//console.log("FPS: " + frameCount*1000/(timestamp - frameCountStartTime));
+		console.log("FPS: " + frameCount*1000/(timestamp - frameCountStartTime));
 		//console.log("Frametime: " + avgFrameTime);
 		frameCountStartTime = timestamp;
 		frameCount = 0;
