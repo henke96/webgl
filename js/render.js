@@ -202,7 +202,7 @@ RenderVertexArray.prototype.drawModels = function() {
 
 	for (let i = 0; i < modelsLength; ++i) {
 		let model = this.models[i];
-		if (model.instances.length > 0) {
+		if (model.instances.length > 0 && model.indices.length > 0) {
 			model.updateMvps();
 			gl.bufferData(gl.ARRAY_BUFFER, model.mvps, gl.STREAM_DRAW);
 			gl.drawElementsInstanced(model.drawOperation, model.indices.length, this.glIndexType, model.startElementOffset, model.instances.length);
