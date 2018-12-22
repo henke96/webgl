@@ -488,12 +488,35 @@ function worldGetInteractPos(infront) {
 		}
 	}
 }
-function worldInit(sizeXChunks, sizeYChunks, sizeZChunks) {
-	worldSizeXChunks = sizeXChunks;
-	worldSizeYChunks = sizeYChunks;
-	worldSizeZChunks = sizeZChunks;
-	worldSizeYZChunks = sizeYChunks*sizeZChunks;
+function worldSave() {
+	let worldString = "";
+	for (let i = 0; i < worldChunks.length; ++i) {
+		worldString += String.fromCharCode.apply(null, worldChunks[i].blocks);
+	}
+	window.localStorage.prevWorld = worldString;
+}
+function worldGenerate() {
+	for (let x = 0; x < worldSizeXChunks*16; ++x) {
+		for (let y = 0; y < worldSizeYChunks*16; ++y) {
+			for (let z = 0; z < worldSizeZChunks*16; ++z) {
+				//worldSetBlock(x, y, z, Math.random()*2);
+				if (y < 16) {
+					worldSetBlock(x, y, z, blockTYPE_DIRT);
+				} else if (y > 16) {
+					worldSetBlock(x, y, z, 0);
+				} else {
+					worldSetBlock(x, y, z, blockTYPE_GRASS);
+				}
+			}
+		}
+	}
+}
+function worldLoadPrev() {
 	worldChunks = [];
+	worldSizeXChunks = 10;
+	worldSizeYChunks = 10;
+	worldSizeZChunks = 10;
+	worldSizeYZChunks = worldSizeYChunks*worldSizeZChunks;
 	for (let xChunk = 0; xChunk < worldSizeXChunks; ++xChunk) {
 		for (let yChunk = 0; yChunk < worldSizeYChunks; ++yChunk) {
 			for (let zChunk = 0; zChunk < worldSizeZChunks; ++zChunk) {
@@ -501,6 +524,22 @@ function worldInit(sizeXChunks, sizeYChunks, sizeZChunks) {
 			}
 		}
 	}
+	let prevWorld = window.localStorage.prevWorld;
+	if (prevWorld) {
+		let chunkBaseIndex = 0;
+		for (let i = 0; i < worldChunks.length; ++i) {
+			let chunk = worldChunks[i];
+			for (let j = 0; j < 4096; ++j) {
+				chunk.blocks[j] = prevWorld.charCodeAt(chunkBaseIndex + j);
+			}
+			chunkBaseIndex += 4096;
+		}
+	} else {
+		worldGenerate();
+	}
+}
+function worldInit() {
+    worldLoadPrev();
 	let maxVisibleQuads = 16*16*16*3;
 	let maxVertices = maxVisibleQuads*4;
 	let maxIndices = maxVisibleQuads*6;
@@ -531,18 +570,6 @@ function worldInit(sizeXChunks, sizeYChunks, sizeZChunks) {
 			}
 		}
 	}*/
-	for (let x = 0; x < worldSizeXChunks*16; ++x) {
-		for (let y = 0; y < 64; ++y) {
-			for (let z = 0; z < worldSizeZChunks*16; ++z) {
-				//worldSetBlock(x, y, z, Math.random()*2);
-				if (y === 63) {
-					worldSetBlock(x, y, z, blockTYPE_GRASS);
-				} else {
-					worldSetBlock(x, y, z, blockTYPE_DIRT);
-				}
-			}
-		}
-	}
 }
 var worldVertices;
 var worldIndices;

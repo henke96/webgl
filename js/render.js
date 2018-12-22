@@ -231,7 +231,7 @@ function renderInit(near, far, widthRatio) {
 	};
 	renderCamera = {
 		x: 32,
-		y: 65,
+		y: 32,
 		z: 32,
 		xAngle: 0,
 		yAngle: 0

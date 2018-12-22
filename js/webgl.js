@@ -1,6 +1,8 @@
 'use strict';
 window.onload = gInit;
 const HTML_CANVAS = "glCanvas";
+const HTML_SAVE_BUTTON = "saveButton";
+const HTML_NEW_WORLD_BUTTON = "newWorldButton";
 
 //{ Game - g
 
@@ -26,11 +28,18 @@ function gInit() {
 	gInitModels();
 	gInitObjects();
 	logicInit();
-	worldInit(10, 10, 10);
+	worldInit();
 	gPrevFrameTimestamp = performance.now();
 	window.requestAnimationFrame(gMainLoop);
 	window.onkeydown = gOnKeyDown;
 	window.onkeyup = gOnKeyUp;
+	
+	document.getElementById(HTML_SAVE_BUTTON).onclick = function() {
+		worldSave();
+	};
+	document.getElementById(HTML_NEW_WORLD_BUTTON).onclick = function() {
+		worldGenerate();
+	};
 	
 	gCurrentBlock = 0;
 	gPointerLocked = false;
