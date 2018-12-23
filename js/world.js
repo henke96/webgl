@@ -492,13 +492,11 @@ function worldSave() {
 	let worldString = "";
 	for (let i = 0; i < worldChunks.length; ++i) {
 		worldString += String.fromCharCode.apply(null, worldChunks[i].blocks);
-		if (i === 0) {
-			console.log(String.fromCharCode.apply(null, worldChunks[i].blocks));
-		}
 	}
 	window.localStorage.prevWorld = worldString;
 }
 function worldGenerate() {
+	logicInit();
 	for (let x = 0; x < worldSizeXChunks*16; ++x) {
 		for (let y = 0; y < worldSizeYChunks*16; ++y) {
 			for (let z = 0; z < worldSizeZChunks*16; ++z) {
@@ -536,11 +534,10 @@ function worldLoadPrev() {
 				let block = prevWorld.charCodeAt(chunkBaseIndex + j);
 				chunk.blocks[j] = block;
 				switch (block & blockNO_STATE_MASK) {
-				case blockTYPE_INVERTER:
-					logicLogicObjects.push(new LogicInverter((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf)));
+				case blockTYPE_NOR:
+					logicLogicObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf)));
 					break;
 				case blockTYPE_OUTPUT_OFF:
-					console.log("output");
 					let state = (block >>> blockOUTPUT_STATE_BIT_DIGIT) & 0x1;
 					logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), state));
 					break;

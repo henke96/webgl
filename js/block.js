@@ -3,6 +3,7 @@ const blockDYNAMIC_BIT = 0x80;
 const blockOUTPUT_STATE_BIT = 0x40;
 const blockOUTPUT_STATE_BIT_DIGIT = 7;
 const blockWIRE_STATE_BIT = 0x40;
+const blockLOGIC_STATE_BIT = 0x40;
 const blockNO_STATE_MASK = 0x8F;
 // Static
 const blockTYPE_NONE = 0;
@@ -10,7 +11,8 @@ const blockTYPE_GRASS = 1;
 const blockTYPE_DIRT = 2;
 const blockTYPE_WIRE1 = 3;
 const blockTYPE_WIRE2 = blockWIRE_STATE_BIT | 3;
-const blockTYPE_INVERTER = 5;
+const blockTYPE_NOR = 5;
+const blockTYPE_OR = blockLOGIC_STATE_BIT | blockTYPE_NOR;
 // Dynamic
 const blockTYPE_OUTPUT_ON = blockDYNAMIC_BIT | blockOUTPUT_STATE_BIT | 0;
 const blockTYPE_OUTPUT_OFF = blockDYNAMIC_BIT | 0;
@@ -49,13 +51,21 @@ blockTypes[blockTYPE_WIRE2] = {
 	otherG: 0.2,
 	otherB: 0.5	
 };
-blockTypes[blockTYPE_INVERTER] = {
+blockTypes[blockTYPE_NOR] = {
 	upR: 0.9,
 	upG: 0.9,
 	upB: 0.9,
 	otherR: 0.9,
 	otherG: 0.9,
 	otherB: 0.9	
+};
+blockTypes[blockTYPE_OR] = {
+	upR: 0.9,
+	upG: 0.9,
+	upB: 0.5,
+	otherR: 0.9,
+	otherG: 0.9,
+	otherB: 0.5	
 };
 blockTypes[blockTYPE_OUTPUT_ON] = {
 	upR: 1,

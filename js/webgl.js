@@ -58,7 +58,7 @@ function gInit() {
 					worldSetBlock(pos.x, pos.y, pos.z, 0);
 					if ((oldBlock & blockNO_STATE_MASK) === blockTYPE_WIRE1) {
 						logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, oldBlock);
-					} else if ((oldBlock & blockNO_STATE_MASK) === blockTYPE_INVERTER) {
+					} else if ((oldBlock & blockNO_STATE_MASK) === blockTYPE_NOR || (oldBlock & blockNO_STATE_MASK) === blockTYPE_OR) {
 						// TODO: Could benefit from chunk structure
 						let index;
 						for (let i = 0; i < logicLogicObjects.length; ++i) {
@@ -96,8 +96,13 @@ function gInit() {
 						worldSetBlock(pos.x, pos.y, pos.z, gCurrentBlock);
 						if ((gCurrentBlock & blockNO_STATE_MASK) === blockTYPE_WIRE1) {
 							logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, gCurrentBlock);
-						} else if (gCurrentBlock === blockTYPE_INVERTER) {
-							let logicObject = new LogicInverter(pos.x, pos.y, pos.z);
+						} else if (gCurrentBlock === blockTYPE_NOR) {
+							let logicObject = new LogicNor(pos.x, pos.y, pos.z);
+							logicLogicObjects.push(logicObject);
+							logicCompileLogicObject(logicObject);
+							logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z);
+						} else if (gCurrentBlock === blockTYPE_OR) {
+							let logicObject = new LogicOr(pos.x, pos.y, pos.z);
 							logicLogicObjects.push(logicObject);
 							logicCompileLogicObject(logicObject);
 							logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z);
@@ -161,8 +166,7 @@ function gMainLoop(timestamp) {
 		cubeModel.instances[i].yAngle += (Math.random() - 0.5)/8;
 		cubeModel.instances[i].zAngle += (Math.random() - 0.5)/8;
 	}
-	logicUpdateLogicObjects();
-	logicUpdateOutputObjects();
+	logicUpdate();
 	gDrawScene();
 	window.requestAnimationFrame(gMainLoop);
 	avgFrameTime += (performance.now() - timestamp - avgFrameTime)/60;
@@ -198,16 +202,19 @@ function gOnKeyDown(e) {
 		gCurrentBlock = blockTYPE_OUTPUT_OFF;
 		break;
 	case "2":
-		gCurrentBlock = blockTYPE_INVERTER;
+		gCurrentBlock = blockTYPE_NOR;
 		break;
 	case "3":
-		gCurrentBlock = blockTYPE_DIRT;
+		gCurrentBlock = blockTYPE_OR;
 		break;
 	case "4":
 		gCurrentBlock = blockTYPE_WIRE1;
 		break;
 	case "5":
 		gCurrentBlock = blockTYPE_WIRE2;
+		break;
+	case "6":
+		gCurrentBlock = blockTYPE_DIRT;
 		break;
 	}
 }
