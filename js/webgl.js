@@ -97,7 +97,7 @@ function gInit() {
 						if ((gCurrentBlock & blockNO_STATE_MASK) === blockTYPE_WIRE1) {
 							logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, gCurrentBlock);
 						} else if (gCurrentBlock === blockTYPE_INVERTER) {
-							let logicObject = new LogicInverter(pos.x, pos.y, pos.z, 0);
+							let logicObject = new LogicInverter(pos.x, pos.y, pos.z);
 							logicLogicObjects.push(logicObject);
 							logicCompileLogicObject(logicObject);
 							logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z);

@@ -492,6 +492,9 @@ function worldSave() {
 	let worldString = "";
 	for (let i = 0; i < worldChunks.length; ++i) {
 		worldString += String.fromCharCode.apply(null, worldChunks[i].blocks);
+		if (i === 0) {
+			console.log(String.fromCharCode.apply(null, worldChunks[i].blocks));
+		}
 	}
 	window.localStorage.prevWorld = worldString;
 }
@@ -530,10 +533,22 @@ function worldLoadPrev() {
 		for (let i = 0; i < worldChunks.length; ++i) {
 			let chunk = worldChunks[i];
 			for (let j = 0; j < 4096; ++j) {
-				chunk.blocks[j] = prevWorld.charCodeAt(chunkBaseIndex + j);
+				let block = prevWorld.charCodeAt(chunkBaseIndex + j);
+				chunk.blocks[j] = block;
+				switch (block & blockNO_STATE_MASK) {
+				case blockTYPE_INVERTER:
+					logicLogicObjects.push(new LogicInverter((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf)));
+					break;
+				case blockTYPE_OUTPUT_OFF:
+					console.log("output");
+					let state = (block >>> blockOUTPUT_STATE_BIT_DIGIT) & 0x1;
+					logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), state));
+					break;
+				}
 			}
 			chunkBaseIndex += 4096;
 		}
+		logicCompileAll();
 	} else {
 		worldGenerate();
 	}

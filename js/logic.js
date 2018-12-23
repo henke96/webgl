@@ -31,11 +31,11 @@ LogicOutput.prototype.updateState = function() {
 		worldUpdateBlock(this.x, this.y, this.z, blockType);
 	}
 }
-function LogicInverter(x, y, z, state) {
+function LogicInverter(x, y, z) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
-	this.state = 1;
+	this.state = undefined;
 	this.inputs = [];
 }
 LogicInverter.prototype.updateState = function() {
@@ -285,6 +285,14 @@ function logicFindConnections(x, y, z, wireType, blockType, list) {
 		} else {
 			return;
 		}
+	}
+}
+function logicCompileAll() {
+	for (let i = 0; i < logicLogicObjects.length; ++i) {
+		logicCompileLogicObject(logicLogicObjects[i]);
+	}
+	for (let j = 0; j < logicOutputObjects.length; ++j) {
+		logicCompileOutputObject(logicOutputObjects[j]);
 	}
 }
 function logicUpdateLogicObjects() {

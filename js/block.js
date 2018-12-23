@@ -1,8 +1,9 @@
 'use strict';
-const blockDYNAMIC_BIT = 0x80000000;
-const blockOUTPUT_STATE_BIT = 0x40000000;
-const blockWIRE_STATE_BIT = 0x40000000;
-const blockNO_STATE_MASK = 0x8FFFFFFF;
+const blockDYNAMIC_BIT = 0x80;
+const blockOUTPUT_STATE_BIT = 0x40;
+const blockOUTPUT_STATE_BIT_DIGIT = 7;
+const blockWIRE_STATE_BIT = 0x40;
+const blockNO_STATE_MASK = 0x8F;
 // Static
 const blockTYPE_NONE = 0;
 const blockTYPE_GRASS = 1;
