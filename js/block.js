@@ -1,24 +1,32 @@
 'use strict';
 const blockDYNAMIC_BIT = 0x80;
-const blockOUTPUT_STATE_BIT = 0x40;
-const blockOUTPUT_STATE_BIT_DIGIT = 7;
-const blockWIRE_STATE_BIT = 0x40;
-const blockLOGIC_STATE_BIT = 0x40;
-const blockNO_STATE_MASK = 0x8F;
+const blockSTATE_BIT_DIGIT = 7;
+const blockSTATE_BIT = 0x40;
+const blockNO_STATE_MASK = 0xBF;
 // Static
 const blockTYPE_NONE = 0;
 const blockTYPE_GRASS = 1;
 const blockTYPE_DIRT = 2;
 const blockTYPE_WIRE1 = 3;
-const blockTYPE_WIRE2 = blockWIRE_STATE_BIT | 3;
+const blockTYPE_WIRE2 = 4;
 const blockTYPE_NOR = 5;
-const blockTYPE_OR = blockLOGIC_STATE_BIT | blockTYPE_NOR;
+const blockTYPE_OR = 6;
 // Dynamic
-const blockTYPE_OUTPUT_ON = blockDYNAMIC_BIT | blockOUTPUT_STATE_BIT | 0;
 const blockTYPE_OUTPUT_OFF = blockDYNAMIC_BIT | 0;
+const blockTYPE_OUTPUT_ON = blockDYNAMIC_BIT | 1;
 
-let blockTypes = [];
+function blockIsOutput(block) {
+	return block === blockTYPE_OUTPUT_ON || block === blockTYPE_OUTPUT_OFF;
+}
+function blockIsWire(block) {
+	return block === blockTYPE_WIRE1 || block === blockTYPE_WIRE2;
+}
+function blockIsLogic(block) {
+	let noStateBlock = block & blockNO_STATE_MASK;
+	return (noStateBlock === blockTYPE_NOR || noStateBlock === blockTYPE_OR);
+}
 
+var blockTypes = [];
 blockTypes[blockTYPE_GRASS] = {
 	upR: 0.3,
 	upG: 0.73,

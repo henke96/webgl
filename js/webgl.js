@@ -56,9 +56,9 @@ function gInit() {
 				if (pos !== null) {
 					let oldBlock = worldGetBlock(pos.x, pos.y, pos.z);
 					worldSetBlock(pos.x, pos.y, pos.z, 0);
-					if ((oldBlock & blockNO_STATE_MASK) === blockTYPE_WIRE1) {
+					if (blockIsWire(oldBlock)) {
 						logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, oldBlock);
-					} else if ((oldBlock & blockNO_STATE_MASK) === blockTYPE_NOR || (oldBlock & blockNO_STATE_MASK) === blockTYPE_OR) {
+					} else if (blockIsLogic(oldBlock)) {
 						// TODO: Could benefit from chunk structure
 						let index;
 						for (let i = 0; i < logicLogicObjects.length; ++i) {
@@ -69,8 +69,8 @@ function gInit() {
 							}
 						}
 						logicLogicObjects.splice(index, 1);
-						logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z);
-					} else if ((oldBlock & blockNO_STATE_MASK) === blockTYPE_OUTPUT_OFF) {
+						logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z, 0);
+					} else if (blockIsOutput(oldBlock)) {
 						// TODO: Could benefit from chunk structure
 						let index;
 						for (let i = 0; i < logicOutputObjects.length; ++i) {
@@ -87,27 +87,31 @@ function gInit() {
 			} else if (e.button === 1) {
 				let pos = worldGetInteractPos(false);
 				if (pos !== null) {
-					gCurrentBlock = worldGetBlock(pos.x, pos.y, pos.z);
+					gCurrentBlock = (worldGetBlock(pos.x, pos.y, pos.z) & blockNO_STATE_MASK);
 				}
 			} else if (e.button === 2) {
 				if (gCurrentBlock !== 0) {
 					let pos = worldGetInteractPos(true);
 					if (pos !== null) {
 						worldSetBlock(pos.x, pos.y, pos.z, gCurrentBlock);
-						if ((gCurrentBlock & blockNO_STATE_MASK) === blockTYPE_WIRE1) {
+						if (blockIsWire(gCurrentBlock)) {
 							logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, gCurrentBlock);
 						} else if (gCurrentBlock === blockTYPE_NOR) {
-							let logicObject = new LogicNor(pos.x, pos.y, pos.z);
+							let logicObject = new LogicNor(pos.x, pos.y, pos.z, 0);
 							logicLogicObjects.push(logicObject);
 							logicCompileLogicObject(logicObject);
 							logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z);
 						} else if (gCurrentBlock === blockTYPE_OR) {
-							let logicObject = new LogicOr(pos.x, pos.y, pos.z);
+							let logicObject = new LogicOr(pos.x, pos.y, pos.z, 0);
 							logicLogicObjects.push(logicObject);
 							logicCompileLogicObject(logicObject);
 							logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z);
-						} else if (gCurrentBlock === blockTYPE_OUTPUT_OFF) {
-							let outputObject = new LogicOutput(pos.x, pos.y, pos.z, 0);
+						} else if (blockIsOutput(gCurrentBlock)) {
+							let state = 0;
+							if (gCurrentBlock === blockTYPE_OUTPUT_ON) {
+								state = 1;
+							}
+							let outputObject = new LogicOutput(pos.x, pos.y, pos.z, state);
 							logicOutputObjects.push(outputObject);
 							logicCompileOutputObject(outputObject);
 							// TODO: this also compiles neighbouring logic objects (not actually connected)

@@ -1,6 +1,6 @@
 'use strict';
 const logicBASE_SPEED = 100;
-const logicSPEED = logicBASE_SPEED;
+const logicSPEED = 1;
 
 const logicEAST_BIT = 0x1;
 const logicWEST_BIT = 0x2;
@@ -14,7 +14,7 @@ function LogicOutput(x, y, z, state) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
-	this.state = 0;
+	this.state = state;
 	this.inputs = [];
 }
 LogicOutput.prototype.updateState = function() {
@@ -29,19 +29,20 @@ LogicOutput.prototype.updateState = function() {
 	if (this.state !== prevState) {
 		let blockType = blockTYPE_OUTPUT_OFF;
 		if (this.state === 1) {
-			blockType |= blockOUTPUT_STATE_BIT;
+			blockType = blockTYPE_OUTPUT_ON;
 		}
 		worldUpdateBlock(this.x, this.y, this.z, blockType);
 	}
 }
-function LogicNor(x, y, z) {
+function LogicNor(x, y, z, state) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
-	this.state = undefined;
+	this.state = state;
 	this.inputs = [];
 }
 LogicNor.prototype.updateState = function() {
+	let prevState = this.state;
 	this.state = 1;
 	for (let i = 0; i < this.inputs.length; ++i) {
 		if (this.inputs[i].state === 1) {
@@ -49,21 +50,28 @@ LogicNor.prototype.updateState = function() {
 			break;
 		}
 	}
+	if (this.state !== prevState) {
+		worldFlipBlockState(this.x, this.y, this.z);
+	}
 }
-function LogicOr(x, y, z) {
+function LogicOr(x, y, z, state) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
-	this.state = undefined;
+	this.state = state;
 	this.inputs = [];
 }
 LogicOr.prototype.updateState = function() {
+	let prevState = this.state;
 	this.state = 0;
 	for (let i = 0; i < this.inputs.length; ++i) {
 		if (this.inputs[i].state === 1) {
 			this.state = 1;
 			break;
 		}
+	}
+	if (this.state !== prevState) {
+		worldFlipBlockState(this.x, this.y, this.z);
 	}
 }
 function logicPushIfUnique(list, newEntry) {
@@ -78,12 +86,12 @@ function logicPushIfUnique(list, newEntry) {
 function logicCompileLogicObject(logicObject) {
 	let outputBlocks = [];
 	let x = logicObject.x, y = logicObject.y, z = logicObject.z;
-	logicFindConnections(x + 1, y, z, worldGetBlock(x + 1, y, z), blockTYPE_OUTPUT_OFF, outputBlocks);
-	logicFindConnections(x - 1, y, z, worldGetBlock(x - 1, y, z), blockTYPE_OUTPUT_OFF, outputBlocks);
-	logicFindConnections(x, y + 1, z, worldGetBlock(x, y + 1, z), blockTYPE_OUTPUT_OFF, outputBlocks);
-	logicFindConnections(x, y - 1, z, worldGetBlock(x, y - 1, z), blockTYPE_OUTPUT_OFF, outputBlocks);
-	logicFindConnections(x, y, z + 1, worldGetBlock(x, y, z + 1), blockTYPE_OUTPUT_OFF, outputBlocks);
-	logicFindConnections(x, y, z - 1, worldGetBlock(x, y, z - 1), blockTYPE_OUTPUT_OFF, outputBlocks);
+	logicFindConnections(x + 1, y, z, worldGetBlock(x + 1, y, z), blockIsOutput, outputBlocks);
+	logicFindConnections(x - 1, y, z, worldGetBlock(x - 1, y, z), blockIsOutput, outputBlocks);
+	logicFindConnections(x, y + 1, z, worldGetBlock(x, y + 1, z), blockIsOutput, outputBlocks);
+	logicFindConnections(x, y - 1, z, worldGetBlock(x, y - 1, z), blockIsOutput, outputBlocks);
+	logicFindConnections(x, y, z + 1, worldGetBlock(x, y, z + 1), blockIsOutput, outputBlocks);
+	logicFindConnections(x, y, z - 1, worldGetBlock(x, y, z - 1), blockIsOutput, outputBlocks);
 	
 	logicObject.inputs.length = 0;
 	// TODO: Could benefit from chunk structure
@@ -101,10 +109,10 @@ function logicCompileLogicObject(logicObject) {
 function logicCompileConnectedLogicObjects(x, y, z, wireType) {
 	let connected = [];
 	if (wireType === 0) {
-		logicFindConnections(x, y, z, blockTYPE_WIRE1, blockTYPE_NOR, connected);
-		logicFindConnections(x, y, z, blockTYPE_WIRE2, blockTYPE_NOR, connected);
+		logicFindConnections(x, y, z, blockTYPE_WIRE1, blockIsLogic, connected);
+		logicFindConnections(x, y, z, blockTYPE_WIRE2, blockIsLogic, connected);
 	} else {
-		logicFindConnections(x, y, z, wireType, blockTYPE_NOR, connected);
+		logicFindConnections(x, y, z, wireType, blockIsLogic, connected);
 	}
 	// TODO: Could benefit from chunk structure
 	for (let i = 0; i < connected.length; ++i) {
@@ -123,7 +131,7 @@ function logicCompileOutputObject(outputObject) {
 	let eastBlock = worldGetBlock(x + 1, y, z), westBlock = worldGetBlock(x - 1, y, z), northBlock = worldGetBlock(x, y, z + 1), southBlock = worldGetBlock(x, y, z - 1), upBlock = worldGetBlock(x, y + 1, z), downBlock = worldGetBlock(x, y - 1, z);
 	outputObject.inputs.length = 0;
 	// TODO: Could benefit from chunk structure
-	if ((eastBlock & blockNO_STATE_MASK) === blockTYPE_NOR) {
+	if (blockIsLogic(eastBlock)) {
 		for (let i = 0; i < logicLogicObjects.length; ++i) {
 			let logicObject = logicLogicObjects[i];
 			if (logicObject.x === x + 1 && logicObject.y === y && logicObject.z === z) {
@@ -132,7 +140,7 @@ function logicCompileOutputObject(outputObject) {
 			}
 		}
 	}
-	if ((westBlock & blockNO_STATE_MASK) === blockTYPE_NOR) {
+	if (blockIsLogic(westBlock)) {
 		for (let i = 0; i < logicLogicObjects.length; ++i) {
 			let logicObject = logicLogicObjects[i];
 			if (logicObject.x === x - 1 && logicObject.y === y && logicObject.z === z) {
@@ -141,7 +149,7 @@ function logicCompileOutputObject(outputObject) {
 			}
 		}
 	}
-	if ((northBlock & blockNO_STATE_MASK) === blockTYPE_NOR) {
+	if (blockIsLogic(northBlock)) {
 		for (let i = 0; i < logicLogicObjects.length; ++i) {
 			let logicObject = logicLogicObjects[i];
 			if (logicObject.x === x && logicObject.y === y && logicObject.z === z + 1) {
@@ -150,7 +158,7 @@ function logicCompileOutputObject(outputObject) {
 			}
 		}
 	}
-	if ((southBlock & blockNO_STATE_MASK) === blockTYPE_NOR) {
+	if (blockIsLogic(southBlock)) {
 		for (let i = 0; i < logicLogicObjects.length; ++i) {
 			let logicObject = logicLogicObjects[i];
 			if (logicObject.x === x && logicObject.y === y && logicObject.z === z - 1) {
@@ -159,7 +167,7 @@ function logicCompileOutputObject(outputObject) {
 			}
 		}
 	}
-	if ((upBlock & blockNO_STATE_MASK) === blockTYPE_NOR) {
+	if (blockIsLogic(upBlock)) {
 		for (let i = 0; i < logicLogicObjects.length; ++i) {
 			let logicObject = logicLogicObjects[i];
 			if (logicObject.x === x && logicObject.y === y + 1 && logicObject.z === z) {
@@ -168,7 +176,7 @@ function logicCompileOutputObject(outputObject) {
 			}
 		}
 	}
-	if ((downBlock & blockNO_STATE_MASK) === blockTYPE_NOR) {
+	if (blockIsLogic(downBlock)) {
 		for (let i = 0; i < logicLogicObjects.length; ++i) {
 			let logicObject = logicLogicObjects[i];
 			if (logicObject.x === x && logicObject.y === y - 1 && logicObject.z === z) {
@@ -188,8 +196,8 @@ function logicCompileConnectedOutputObjects(x, y, z) {
 		}
 	}
 }
-function logicFindConnections(x, y, z, wireType, blockType, list) {
-	if ((wireType & blockNO_STATE_MASK) !== blockTYPE_WIRE1) {
+function logicFindConnections(x, y, z, wireType, blockFunction, list) {
+	if (!blockIsWire(wireType)) {
 		return;
 	}
 	let backtrackStack = [];
@@ -204,7 +212,7 @@ function logicFindConnections(x, y, z, wireType, blockType, list) {
 				blockEast = worldGetBlock(x + 1, y, z);
 				if (blockEast === wireType) {
 					availableBranches |= logicEAST_BIT;
-				} else if ((blockEast & blockNO_STATE_MASK) === blockType) {
+				} else if (blockFunction(blockEast)) {
 					logicPushIfUnique(list, {x: x + 1, y: y, z: z});
 				}
 			}
@@ -212,7 +220,7 @@ function logicFindConnections(x, y, z, wireType, blockType, list) {
 				blockWest = worldGetBlock(x - 1, y, z);
 				if (blockWest === wireType) {
 					availableBranches |= logicWEST_BIT;
-				} else if ((blockWest & blockNO_STATE_MASK) === blockType) {
+				} else if (blockFunction(blockWest)) {
 					logicPushIfUnique(list, {x: x - 1, y: y, z: z});
 				}
 			}
@@ -220,7 +228,7 @@ function logicFindConnections(x, y, z, wireType, blockType, list) {
 				blockNorth = worldGetBlock(x, y, z + 1);
 				if (blockNorth === wireType) {
 					availableBranches |= logicNORTH_BIT;
-				} else if ((blockNorth & blockNO_STATE_MASK) === blockType) {
+				} else if (blockFunction(blockNorth)) {
 					logicPushIfUnique(list, {x: x, y: y, z: z + 1});
 				}
 			}
@@ -228,7 +236,7 @@ function logicFindConnections(x, y, z, wireType, blockType, list) {
 				blockSouth = worldGetBlock(x, y, z - 1);
 				if (blockSouth === wireType) {
 					availableBranches |= logicSOUTH_BIT;
-				} else if ((blockSouth & blockNO_STATE_MASK) === blockType) {
+				} else if (blockFunction(blockSouth)) {
 					logicPushIfUnique(list, {x: x, y: y, z: z - 1});
 				}
 			}
@@ -236,7 +244,7 @@ function logicFindConnections(x, y, z, wireType, blockType, list) {
 				blockUp = worldGetBlock(x, y + 1, z);
 				if (blockUp === wireType) {
 					availableBranches |= logicUP_BIT;
-				} else if ((blockUp & blockNO_STATE_MASK) === blockType) {
+				} else if (blockFunction(blockUp)) {
 					logicPushIfUnique(list, {x: x, y: y + 1, z: z});
 				}
 			}
@@ -244,7 +252,7 @@ function logicFindConnections(x, y, z, wireType, blockType, list) {
 				blockDown = worldGetBlock(x, y - 1, z);
 				if (blockDown === wireType) {
 					availableBranches |= logicDOWN_BIT;
-				} else if ((blockDown & blockNO_STATE_MASK) === blockType) {
+				} else if (blockFunction(blockDown)) {
 					logicPushIfUnique(list, {x: x, y: y - 1, z: z});
 				}
 			}
