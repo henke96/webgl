@@ -1,6 +1,6 @@
 'use strict';
 const logicBASE_SPEED = 100;
-const logicSPEED = 1;
+const logicSPEED = 100;
 
 const logicEAST_BIT = 0x1;
 const logicWEST_BIT = 0x2;
