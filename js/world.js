@@ -6,14 +6,14 @@ function WorldChunk(xChunk, yChunk, zChunk) {
 	this.xChunk = xChunk;
 	this.yChunk = yChunk;
 	this.zChunk = zChunk;
-	this.blocks = new Int32Array(16*16*16);
+	this.blocks = new Uint8Array(1 << 12); //TODO: can be int8
 	this.staticModel = new RenderModel([], [], gl.TRIANGLES, true);
-	this.staticModel.addInstance(new RenderInstance(xChunk*16, yChunk*16, zChunk*16, 1, 0, 0, 0));
+	this.staticModel.addInstance(new RenderInstance(xChunk << 4, yChunk << 4, zChunk << 4, 1, 0, 0, 0));
 	this.staticModel.finalizeInstances();
 	this.staticVertexArray = new RenderVertexArray(gl.STATIC_DRAW, gl.UNSIGNED_SHORT);
 	this.staticVertexArray.addModel(this.staticModel);
 	this.dynamicModel = new RenderModel([], [], gl.TRIANGLES, true);
-	this.dynamicModel.addInstance(new RenderInstance(xChunk*16, yChunk*16, zChunk*16, 1, 0, 0, 0));
+	this.dynamicModel.addInstance(new RenderInstance(xChunk << 4, yChunk << 4, zChunk << 4, 1, 0, 0, 0));
 	this.dynamicModel.finalizeInstances();
 	this.dynamicVertexArray = new RenderVertexArray(gl.DYNAMIC_DRAW, gl.UNSIGNED_SHORT);
 	this.dynamicVertexArray.addModel(this.dynamicModel);
@@ -501,19 +501,31 @@ function worldGetInteractPos(infront) {
 function worldSave() {
 	let worldString = "";
 	for (let i = 0; i < worldChunks.length; ++i) {
-		worldString += String.fromCharCode.apply(null, worldChunks[i].blocks);
+		worldString += String.fromCharCode.apply(null, new Uint16Array(worldChunks[i].blocks.buffer));
 	}
 	window.localStorage.prevWorld = worldString;
 }
+function worldSaveFile() {
+	let data = [];
+	for (let i = 0; i < worldChunks.length; ++i) {
+		data.push(worldChunks[i].blocks);
+	}
+	let blob = new Blob(data, {type: "octet/stream"});
+	let url = window.URL.createObjectURL(blob);
+	worldDownloadLink.href = url;
+	worldDownloadLink.download = "testworld";
+	worldDownloadLink.click();
+	window.URL.revokeObjectURL(url);
+}
 function worldGenerate() {
 	logicInit();
-	for (let x = 0; x < worldSizeXChunks*16; ++x) {
-		for (let y = 0; y < worldSizeYChunks*16; ++y) {
-			for (let z = 0; z < worldSizeZChunks*16; ++z) {
+	for (let x = 0; x < worldSizeXChunks << 4; ++x) {
+		for (let y = 0; y < worldSizeYChunks << 4; ++y) {
+			for (let z = 0; z < worldSizeZChunks << 4; ++z) {
 				//worldSetBlock(x, y, z, Math.random()*2);
-				if (y < 16) {
+				if (y < 15) {
 					worldSetBlock(x, y, z, blockTYPE_DIRT);
-				} else if (y > 16) {
+				} else if (y > 15) {
 					worldSetBlock(x, y, z, 0);
 				} else {
 					worldSetBlock(x, y, z, blockTYPE_GRASS);
@@ -521,6 +533,45 @@ function worldGenerate() {
 			}
 		}
 	}
+}
+function worldLoadFile(event) {
+	let files = event.target.files;
+	if (files.length > 0) {
+		let file = files[0];
+		let fileReader = new FileReader();
+		fileReader.onload = function(event) {
+			let buffer = event.target.result;
+			let array = new Uint8Array(buffer);
+			logicInit();
+			let chunkBaseIndex = 0;
+			for (let i = 0; i < worldChunks.length; ++i) {
+				let chunk = worldChunks[i];
+				for (let j = 0; j < 4096; ++j) {
+					let block = array[chunkBaseIndex + j];
+					chunk.blocks[j] = block;
+					switch (block & blockNO_STATE_MASK) {
+					case blockTYPE_NOR:
+						logicLogicObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
+						break;
+					case blockTYPE_OR:
+						logicLogicObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
+						break;
+					case blockTYPE_OUTPUT_OFF:
+						logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
+						break;
+					case blockTYPE_OUTPUT_ON:
+						logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
+						break;				 
+					}
+				}
+				chunk.dirty = worldDIRTY_DYNAMIC_BIT | worldDIRTY_STATIC_BIT;
+				chunkBaseIndex += 4096;
+			}
+			logicCompileAll();
+		}
+		fileReader.readAsArrayBuffer(file);
+	}
+	event.target.value = null;
 }
 function worldLoadPrev() {
 	worldChunks = [];
@@ -537,37 +588,51 @@ function worldLoadPrev() {
 	}
 	let prevWorld = window.localStorage.prevWorld;
 	if (prevWorld) {
-		let chunkBaseIndex = 0;
-		for (let i = 0; i < worldChunks.length; ++i) {
-			let chunk = worldChunks[i];
-			for (let j = 0; j < 4096; ++j) {
-				let block = prevWorld.charCodeAt(chunkBaseIndex + j);
-				chunk.blocks[j] = block;
-				switch (block & blockNO_STATE_MASK) {
-				case blockTYPE_NOR:
-					logicLogicObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-					break;
-				case blockTYPE_OR:
-					logicLogicObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-					break;
-				case blockTYPE_OUTPUT_OFF:
-					logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
-					break;
-				case blockTYPE_OUTPUT_ON:
-					logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
-					break;				 
-				}
-			}
-			chunkBaseIndex += 4096;
-		}
-		logicCompileAll();
+		worldLoadFromString(prevWorld);
 	} else {
 		worldGenerate();
 	}
 }
+function worldLoadFromString(world) {
+	logicInit();
+	let chunkBaseIndex = 0;
+	for (let i = 0; i < worldChunks.length; ++i) {
+		let chunk = worldChunks[i];
+		for (let j = 0; j < 4096; ++j) {
+			let block = world.charCodeAt(chunkBaseIndex + (j >>> 1));
+			if (j & 0x1 === 1) {
+				block = (block >>> 8) & 0xFF;
+			} else {
+				block &= 0xFF;
+			}
+			chunk.blocks[j] = block;
+			switch (block & blockNO_STATE_MASK) {
+			case blockTYPE_NOR:
+				logicLogicObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
+				break;
+			case blockTYPE_OR:
+				logicLogicObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
+				break;
+			case blockTYPE_OUTPUT_OFF:
+				logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
+				break;
+			case blockTYPE_OUTPUT_ON:
+				logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
+				break;				 
+			}
+		}
+		chunk.dirty = worldDIRTY_DYNAMIC_BIT | worldDIRTY_STATIC_BIT;
+		chunkBaseIndex += 2048;
+	}
+	logicCompileAll();
+}
 function worldInit() {
+	document.getElementById("loadFileInput").onchange = worldLoadFile;
+	worldDownloadLink = document.createElement("a");
+	worldDownloadLink.style = "display: none";
+	document.body.appendChild(worldDownloadLink);
     worldLoadPrev();
-	let maxVisibleQuads = 16*16*16*3;
+	let maxVisibleQuads = (1 << 12)*3;
 	let maxVertices = maxVisibleQuads*4;
 	let maxIndices = maxVisibleQuads*6;
 	worldVertices = new Float32Array(maxVertices*renderVertexComponents);
@@ -605,3 +670,4 @@ var worldSizeXChunks;
 var worldSizeYChunks;
 var worldSizeZChunks;
 var worldSizeYZChunks;
+var worldDownloadLink;

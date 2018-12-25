@@ -3,6 +3,8 @@ window.onload = gInit;
 const HTML_CANVAS = "glCanvas";
 const HTML_SAVE_BUTTON = "saveButton";
 const HTML_NEW_WORLD_BUTTON = "newWorldButton";
+const HTML_SAVE_FILE_BUTTON = "saveFileButton";
+const HTML_LOAD_FILE_INPUT = "loadFileInput";
 
 //{ Game - g
 
@@ -40,7 +42,9 @@ function gInit() {
 	document.getElementById(HTML_NEW_WORLD_BUTTON).onclick = function() {
 		worldGenerate();
 	};
-	
+	document.getElementById(HTML_SAVE_FILE_BUTTON).onclick = function() {
+		worldSaveFile();
+	};
 	gCurrentBlock = 0;
 	gPointerLocked = false;
 	renderCanvas.requestPointerLock = renderCanvas.requestPointerLock || renderCanvas.mozRequestPointerLock;

@@ -8,7 +8,11 @@
 <script src="js/world.js"></script>
 <script src="js/webgl.js"></script>
 <body>
+  <button id="newWorldButton">New world</button>
   <button id="saveButton">Save</button>
-  <button id="newWorldButton">New world</button><br>
+  <button id="saveFileButton">Save file</button>
+  <button onclick="document.getElementById('loadFileInput').click();">Load file</button>
+  <input type="file" id="loadFileInput" hidden>
+  <br>
   <canvas id="glCanvas" width="800" height="600"></canvas>
 </body>
