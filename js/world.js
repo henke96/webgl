@@ -334,11 +334,8 @@ function worldSetBlock(x, y, z, value) {
 	if (chunk === null) {
 		return;
 	}
-	let index = ((x & 0xf) << 8) + ((y & 0xf) << 4) + (z & 0xf);
-	if ((value === 0) !== (chunk.blocks[index] === 0)) { // TODO worth?
-		worldDirtyChunksAround(x, y, z);
-	}
-	chunk.blocks[index] = value;
+	worldDirtyChunksAround(x, y, z);
+	chunk.blocks[((x & 0xf) << 8) + ((y & 0xf) << 4) + (z & 0xf)] = value;
 }
 function worldUpdateBlock(x, y, z, value) {
 	let chunk = worldGetChunk(x >> 4, y >> 4, z >> 4);
