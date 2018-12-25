@@ -1,5 +1,8 @@
 'use strict';
+const worldeditSET_POS_FIRST = "Set first pos";
+const worldeditSET_POS_SECOND = "Set second pos";
 function worldeditCopy() {
+	if (worldeditSelection.x === -1) return;
 	let minX = worldeditSelection.x, minY = worldeditSelection.y, minZ = worldeditSelection.z;
 	let dx = worldeditSelection.dx, dy = worldeditSelection.dy, dz = worldeditSelection.dz;
 	if (worldeditBlocks.length < dx*dy*dz) {
@@ -14,6 +17,7 @@ function worldeditCopy() {
 			}
 		}
 	}
+	worldeditCopyOffset = {x: minX - Math.floor(renderCamera.x), y: minY - Math.floor(renderCamera.y), z: minZ - Math.floor(renderCamera.z)};
 }
 function worldeditOnVolumeChanged(pasteX, pasteY, pasteZ, endX, endY, endZ) {
 	let i = logicLogicObjects.length;
@@ -101,8 +105,29 @@ function worldeditSetPos() {
 function worldeditInit() {
 	worldeditPrevPos = {x: -1};
 	worldeditSelection = {x: -1};
+	worldeditCopyOffset = {x: -1};
 	worldeditBlocks = new Uint8Array(0);
+	worldeditSetPosButton = document.getElementById(HTML_SET_POS_BUTTON);
+	worldeditSetPosButton.innerHTML = worldeditSET_POS_FIRST;
+	worldeditSetPosButton.onclick = function() {
+		worldeditSetPos();
+		if (worldeditSelection.x !== -1 || worldeditPrevPos.x === -1) {
+			worldeditSetPosButton.innerHTML = worldeditSET_POS_FIRST;
+		} else {
+			worldeditSetPosButton.innerHTML = worldeditSET_POS_SECOND;
+		}
+	};
+	document.getElementById(HTML_COPY_BUTTON).onclick = function() {
+		worldeditCopy();
+	};
+	document.getElementById(HTML_PASTE_BUTTON).onclick = function() {
+		if (worldeditCopyOffset.x !== -1) {
+			worldeditPaste(Math.floor(renderCamera.x) + worldeditCopyOffset.x, Math.floor(renderCamera.y) + worldeditCopyOffset.y, Math.floor(renderCamera.z) + worldeditCopyOffset.z);
+		}
+	};
 }
+var worldeditSetPosButton;
 var worldeditSelection;
-var worldeditBlocks;
 var worldeditPrevPos;
+var worldeditBlocks;
+var worldeditCopyOffset;

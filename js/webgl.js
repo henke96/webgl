@@ -5,6 +5,10 @@ const HTML_SAVE_BUTTON = "saveButton";
 const HTML_NEW_WORLD_BUTTON = "newWorldButton";
 const HTML_SAVE_FILE_BUTTON = "saveFileButton";
 const HTML_LOAD_FILE_INPUT = "loadFileInput";
+const HTML_SET_POS_BUTTON = "setPosButton";
+const HTML_COPY_BUTTON = "copyButton";
+const HTML_PASTE_BUTTON = "pasteButton";
+
 
 //{ Game - g
 
@@ -37,15 +41,6 @@ function gInit() {
 	window.onkeydown = gOnKeyDown;
 	window.onkeyup = gOnKeyUp;
 	
-	document.getElementById(HTML_SAVE_BUTTON).onclick = function() {
-		worldSave();
-	};
-	document.getElementById(HTML_NEW_WORLD_BUTTON).onclick = function() {
-		worldGenerate();
-	};
-	document.getElementById(HTML_SAVE_FILE_BUTTON).onclick = function() {
-		worldSaveFile();
-	};
 	gCurrentBlock = 0;
 	gPointerLocked = false;
 	renderCanvas.requestPointerLock = renderCanvas.requestPointerLock || renderCanvas.mozRequestPointerLock;
@@ -225,6 +220,9 @@ function gOnKeyDown(e) {
 	case "6":
 		gCurrentBlock = blockTYPE_DIRT;
 		break;
+	case " ":
+		e.preventDefault();
+		break;
 	}
 }
 function gOnKeyUp(e) {
@@ -323,10 +321,10 @@ function gInitModels() {
 	gModels[gMODEL_NICE_CUBE] = new RenderModel(vertices, indices, gl.TRIANGLES, true);
 	
 	vertices = [
-		-0.5, 0.5, 0, 0.2, 0.2, 0.2,
-		-0.5, -0.5, 0, 0.2, 0.2, 0.2,
-		0.5, 0.5, 0, 0.2, 0.2, 0.2,
-		0.5, -0.5, 0, 0.2, 0.2, 0.2,
+		-0.5, 0.5, 0, 0.0, 0.5, 0.5,
+		-0.5, -0.5, 0, 0.0, 0.5, 0.5,
+		0.5, 0.5, 0, 0.0, 0.5, 0.5,
+		0.5, -0.5, 0, 0.0, 0.5, 0.5,
 	];
 	indices = [
 		0, 1, 2, 3

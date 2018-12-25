@@ -503,6 +503,8 @@ function worldSave() {
 	window.localStorage.prevWorld = worldString;
 }
 function worldSaveFile() {
+	let fileName = prompt("File name: ", "world");
+	if (fileName === null) return;
 	let data = [];
 	for (let i = 0; i < worldChunks.length; ++i) {
 		data.push(worldChunks[i].blocks);
@@ -510,7 +512,7 @@ function worldSaveFile() {
 	let blob = new Blob(data, {type: "octet/stream"});
 	let url = window.URL.createObjectURL(blob);
 	worldDownloadLink.href = url;
-	worldDownloadLink.download = "testworld";
+	worldDownloadLink.download = fileName;
 	worldDownloadLink.click();
 	window.URL.revokeObjectURL(url);
 }
@@ -628,6 +630,16 @@ function worldInit() {
 	worldDownloadLink = document.createElement("a");
 	worldDownloadLink.style = "display: none";
 	document.body.appendChild(worldDownloadLink);
+	document.getElementById(HTML_SAVE_BUTTON).onclick = function() {
+		worldSave();
+	};
+	document.getElementById(HTML_NEW_WORLD_BUTTON).onclick = function() {
+		worldGenerate();
+	};
+	document.getElementById(HTML_SAVE_FILE_BUTTON).onclick = function() {
+		worldSaveFile();
+	};
+	
     worldLoadPrev();
 	let maxVisibleQuads = (1 << 12)*3;
 	let maxVertices = maxVisibleQuads*4;
