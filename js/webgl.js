@@ -31,6 +31,7 @@ function gInit() {
 	gInitObjects();
 	logicInit();
 	worldInit();
+	worldeditInit();
 	gPrevFrameTimestamp = performance.now();
 	window.requestAnimationFrame(gMainLoop);
 	window.onkeydown = gOnKeyDown;
