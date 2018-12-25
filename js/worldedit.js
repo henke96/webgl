@@ -59,8 +59,7 @@ function worldeditPaste(pasteX, pasteY, pasteZ) {
 	for (let x = pasteX; x < endX; ++x) {
 		for (let y = pasteY; y < endY; ++y) {
 			for (let z = pasteZ; z < endZ; ++z, ++index) {
-				let block = worldeditBlocks[index];
-				worldSetBlock(x, y, z, block);
+				worldSetBlock(x, y, z, worldeditBlocks[index]);
 			}
 		}
 	}
@@ -107,4 +106,3 @@ function worldeditInit() {
 var worldeditSelection;
 var worldeditBlocks;
 var worldeditPrevPos;
-var worldeditSecondPos;
