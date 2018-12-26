@@ -8,7 +8,7 @@ const HTML_LOAD_FILE_INPUT = "loadFileInput";
 const HTML_SET_POS_BUTTON = "setPosButton";
 const HTML_COPY_BUTTON = "copyButton";
 const HTML_PASTE_BUTTON = "pasteButton";
-
+const HTML_UNDO_BUTTON = "undoButton";
 
 //{ Game - g
 

@@ -19,6 +19,36 @@ function worldeditCopy() {
 	}
 	worldeditCopyOffset = {x: minX - Math.floor(renderCamera.x), y: minY - Math.floor(renderCamera.y), z: minZ - Math.floor(renderCamera.z)};
 }
+function worldeditStoreVolume(startX, startY, startZ, endX, endY, endZ) {
+	worldeditStoredVolume = {startX: startX, startY: startY, startZ: startZ, endX: endX, endY: endY, endZ: endZ};
+	let volume = (endX - startX)*(endY - startY)*(endZ - startZ);
+	if (volume > worldeditStoredBlocks.length) {
+		worldeditStoredBlocks = new Uint8Array(volume);
+	}
+	let index = 0;
+	for (let x = startX; x < endX; ++x) {
+		for (let y = startY; y < endY; ++y) {
+			for (let z = startZ; z < endZ; ++z, ++index) {
+				worldeditStoredBlocks[index] = worldGetBlock(x, y, z);
+			}
+		}
+	}
+}
+function worldeditRestoreVolume() {
+	if (worldeditStoredVolume.startX === -1) return;
+	let startX = worldeditStoredVolume.startX, startY = worldeditStoredVolume.startY, startZ = worldeditStoredVolume.startZ;
+	let endX = worldeditStoredVolume.endX, endY = worldeditStoredVolume.endY, endZ = worldeditStoredVolume.endZ;
+	let index = 0;
+	for (let x = startX; x < endX; ++x) {
+		for (let y = startY; y < endY; ++y) {
+			for (let z = startZ; z < endZ; ++z, ++index) {
+				worldSetBlock(x, y, z, worldeditStoredBlocks[index]);
+			}
+		}
+	}
+	worldeditOnVolumeChanged(startX, startY, startZ, endX, endY, endZ);
+	worldeditStoredVolume.startX = -1;
+}
 function worldeditOnVolumeChanged(pasteX, pasteY, pasteZ, endX, endY, endZ) {
 	let i = logicLogicObjects.length;
 	while (i--) {
@@ -59,6 +89,7 @@ function worldeditOnVolumeChanged(pasteX, pasteY, pasteZ, endX, endY, endZ) {
 function worldeditPaste(pasteX, pasteY, pasteZ) {
 	let dx = worldeditSelection.dx, dy = worldeditSelection.dy, dz = worldeditSelection.dz;
 	let endX = pasteX + dx, endY = pasteY + dy, endZ = pasteZ + dz;
+	worldeditStoreVolume(pasteX, pasteY, pasteZ, endX, endY, endZ);
 	let index = 0;
 	for (let x = pasteX; x < endX; ++x) {
 		for (let y = pasteY; y < endY; ++y) {
@@ -107,6 +138,8 @@ function worldeditInit() {
 	worldeditSelection = {x: -1};
 	worldeditCopyOffset = {x: -1};
 	worldeditBlocks = new Uint8Array(0);
+	worldeditStoredBlocks = new Uint8Array(0);
+	worldeditStoredVolume = {startX: -1};
 	worldeditSetPosButton = document.getElementById(HTML_SET_POS_BUTTON);
 	worldeditSetPosButton.innerHTML = worldeditSET_POS_FIRST;
 	worldeditSetPosButton.onclick = function() {
@@ -125,9 +158,14 @@ function worldeditInit() {
 			worldeditPaste(Math.floor(renderCamera.x) + worldeditCopyOffset.x, Math.floor(renderCamera.y) + worldeditCopyOffset.y, Math.floor(renderCamera.z) + worldeditCopyOffset.z);
 		}
 	};
+	document.getElementById(HTML_UNDO_BUTTON).onclick = function() {
+		worldeditRestoreVolume();
+	};
 }
 var worldeditSetPosButton;
 var worldeditSelection;
 var worldeditPrevPos;
 var worldeditBlocks;
+var worldeditStoredBlocks;
+var worldeditStoredVolume;
 var worldeditCopyOffset;
