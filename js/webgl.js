@@ -9,6 +9,8 @@ const HTML_SET_POS_BUTTON = "setPosButton";
 const HTML_COPY_BUTTON = "copyButton";
 const HTML_PASTE_BUTTON = "pasteButton";
 const HTML_UNDO_BUTTON = "undoButton";
+const HTML_FILL_BUTTON = "fillButton";
+const HTML_FPS_LABEL = "fpsLabel";
 
 //{ Game - g
 
@@ -40,6 +42,12 @@ function gInit() {
 	window.requestAnimationFrame(gMainLoop);
 	window.onkeydown = gOnKeyDown;
 	window.onkeyup = gOnKeyUp;
+	
+	gAvgFrameTime = 0;
+	gFrameCount = 0;
+	gFrameCountStartTime = performance.now();
+	gFpsLabel = document.getElementById(HTML_FPS_LABEL);
+	gFpsLabel.innerHTML = "FPS: ";
 	
 	gCurrentBlock = 0;
 	gPointerLocked = false;
@@ -123,17 +131,14 @@ function gInit() {
 		}
 	}
 }
-var frameCount = 0;
-var frameCountStartTime = performance.now();
-var avgFrameTime = 0;
 function gMainLoop(timestamp) {
-	if (timestamp - frameCountStartTime >= 1000) {
-		console.log("FPS: " + frameCount*1000/(timestamp - frameCountStartTime));
-		//console.log("Frametime: " + avgFrameTime);
-		frameCountStartTime = timestamp;
-		frameCount = 0;
+	if (timestamp - gFrameCountStartTime >= 1000) {
+		gFpsLabel.innerHTML = "FPS: " + Math.round(gFrameCount*1000/(timestamp - gFrameCountStartTime));
+		//console.log("Frametime: " + gAvgFrameTime);
+		gFrameCountStartTime = timestamp;
+		gFrameCount = 0;
 	}
-	++frameCount;
+	++gFrameCount;
 	
 	let deltaTime = timestamp - gPrevFrameTimestamp;
 	gPrevFrameTimestamp = timestamp;
@@ -173,7 +178,7 @@ function gMainLoop(timestamp) {
 	logicUpdate();
 	gDrawScene();
 	window.requestAnimationFrame(gMainLoop);
-	avgFrameTime += (performance.now() - timestamp - avgFrameTime)/60;
+	gAvgFrameTime += (performance.now() - timestamp - gAvgFrameTime)/60;
 }
 function gDrawScene() {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -349,4 +354,8 @@ var gKeysDown;
 var gMouseMove;
 var gPointerLocked;
 var gCurrentBlock;
+var gFrameCount;
+var gFrameCountStartTime;
+var gAvgFrameTime;
+var gFpsLabel;
 //}

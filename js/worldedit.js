@@ -85,6 +85,21 @@ function worldeditOnVolumeChanged(pasteX, pasteY, pasteZ, endX, endY, endZ) {
 			}
 		}
 	}
+	logicCompileAll();
+}
+function worldeditFill() {
+	let fillX = worldeditSelection.x, fillY = worldeditSelection.y, fillZ = worldeditSelection.z;
+	let dx = worldeditSelection.dx, dy = worldeditSelection.dy, dz = worldeditSelection.dz;
+	let endX = fillX + dx, endY = fillY + dy, endZ = fillZ + dz;
+	worldeditStoreVolume(fillX, fillY, fillZ, endX, endY, endZ);
+	for (let x = fillX; x < endX; ++x) {
+		for (let y = fillY; y < endY; ++y) {
+			for (let z = fillZ; z < endZ; ++z) {
+				worldSetBlock(x, y, z, gCurrentBlock);
+			}
+		}
+	}
+	worldeditOnVolumeChanged(fillX, fillY, fillZ, endX, endY, endZ);
 }
 function worldeditPaste(pasteX, pasteY, pasteZ) {
 	let dx = worldeditSelection.dx, dy = worldeditSelection.dy, dz = worldeditSelection.dz;
@@ -99,7 +114,6 @@ function worldeditPaste(pasteX, pasteY, pasteZ) {
 		}
 	}
 	worldeditOnVolumeChanged(pasteX, pasteY, pasteZ, endX, endY, endZ);
-	logicCompileAll();
 }
 function worldeditSetPos() {
 	if (worldeditSelection.x !== -1 || worldeditPrevPos.x === -1) {
@@ -160,6 +174,9 @@ function worldeditInit() {
 	};
 	document.getElementById(HTML_UNDO_BUTTON).onclick = function() {
 		worldeditRestoreVolume();
+	};
+	document.getElementById(HTML_FILL_BUTTON).onclick = function() {
+		worldeditFill();
 	};
 }
 var worldeditSetPosButton;
