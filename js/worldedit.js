@@ -3,6 +3,7 @@ const worldeditSET_POS_FIRST = "Set first pos";
 const worldeditSET_POS_SECOND = "Set second pos";
 function worldeditCopy() {
 	if (worldeditSelection.x === -1) return;
+	logicWriteBlockStates();
 	let minX = worldeditSelection.x, minY = worldeditSelection.y, minZ = worldeditSelection.z;
 	let dx = worldeditSelection.dx, dy = worldeditSelection.dy, dz = worldeditSelection.dz;
 	if (worldeditBlocks.length < dx*dy*dz) {
@@ -20,6 +21,7 @@ function worldeditCopy() {
 	worldeditCopyOffset = {x: minX - Math.floor(renderCamera.x), y: minY - Math.floor(renderCamera.y), z: minZ - Math.floor(renderCamera.z)};
 }
 function worldeditStoreVolume(startX, startY, startZ, endX, endY, endZ) {
+	logicWriteBlockStates();
 	worldeditStoredVolume = {startX: startX, startY: startY, startZ: startZ, endX: endX, endY: endY, endZ: endZ};
 	let volume = (endX - startX)*(endY - startY)*(endZ - startZ);
 	if (volume > worldeditStoredBlocks.length) {

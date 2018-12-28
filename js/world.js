@@ -322,12 +322,18 @@ function worldGetChunk(xChunk, yChunk, zChunk) {
 	}
 	return worldChunks[xChunk*worldSizeYZChunks + yChunk*worldSizeZChunks + zChunk];
 }
-function worldFlipBlockState(x, y, z) {
+function worldSetBlockState(x, y, z, state) {
 	let chunk = worldGetChunk(x >> 4, y >> 4, z >> 4);
 	if (chunk === null) {
 		return;
 	}
-	chunk.blocks[((x & 0xf) << 8) + ((y & 0xf) << 4) + (z & 0xf)] ^= blockSTATE_BIT;
+	let index = ((x & 0xf) << 8) + ((y & 0xf) << 4) + (z & 0xf);
+	let block = chunk.blocks[index];
+	if (state === 0) {
+		chunk.blocks[index] = block & blockNO_STATE_MASK;
+	} else {
+		chunk.blocks[index] = block | blockSTATE_BIT;
+	}
 }
 function worldSetBlock(x, y, z, value) {
 	let chunk = worldGetChunk(x >> 4, y >> 4, z >> 4);
@@ -505,6 +511,7 @@ function worldSave() {
 function worldSaveFile() {
 	let fileName = prompt("File name: ", "world");
 	if (fileName === null) return;
+	logicWriteBlockStates();
 	let data = [];
 	for (let i = 0; i < worldChunks.length; ++i) {
 		data.push(worldChunks[i].blocks);

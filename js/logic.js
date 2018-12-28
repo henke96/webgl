@@ -50,9 +50,6 @@ LogicNor.prototype.updateState = function() {
 			break;
 		}
 	}
-	if (this.state !== prevState) {
-		worldFlipBlockState(this.x, this.y, this.z);
-	}
 }
 function LogicOr(x, y, z, state) {
 	this.x = x;
@@ -69,9 +66,6 @@ LogicOr.prototype.updateState = function() {
 			this.state = 1;
 			break;
 		}
-	}
-	if (this.state !== prevState) {
-		worldFlipBlockState(this.x, this.y, this.z);
 	}
 }
 function logicPushIfUnique(list, newEntry) {
@@ -320,6 +314,12 @@ function logicCompileAll() {
 	}
 	for (let j = 0; j < logicOutputObjects.length; ++j) {
 		logicCompileOutputObject(logicOutputObjects[j]);
+	}
+}
+function logicWriteBlockStates() {
+	for (let i = 0; i < logicLogicObjects.length; ++i) {
+		let object = logicLogicObjects[i];
+		worldSetBlockState(object.x, object.y, object.z, object.state);
 	}
 }
 function logicUpdateLogicObjects() {
