@@ -329,10 +329,10 @@ function worldSetBlockState(x, y, z, state) {
 	}
 	let index = ((x & 0xf) << 8) + ((y & 0xf) << 4) + (z & 0xf);
 	let block = chunk.blocks[index];
-	if (state === 0) {
-		chunk.blocks[index] = block & blockNO_STATE_MASK;
-	} else {
+	if (state) {
 		chunk.blocks[index] = block | blockSTATE_BIT;
+	} else {
+		chunk.blocks[index] = block & blockNO_STATE_MASK;
 	}
 }
 function worldSetBlock(x, y, z, value) {

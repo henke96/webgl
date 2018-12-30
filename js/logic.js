@@ -14,58 +14,71 @@ function LogicOutput(x, y, z, state) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
-	this.state = state;
-	this.inputs = [];
+	this.powers = state;
+	this.prevPowers = state;
+	this.outputs = [];
 }
 LogicOutput.prototype.updateState = function() {
-	let prevState = this.state;
-	this.state = 0;
-	for (let i = 0; i < this.inputs.length; ++i) {
-		if (this.inputs[i].state === 1) {
-			this.state = 1;
-			break;
+	if (this.powers > 0) {
+		if (this.prevPowers === 0) {
+			for (let i = 0, len = this.outputs.length; i < len; ++i) {
+				++this.outputs[i].powers;
+			}
+			worldUpdateBlock(this.x, this.y, this.z, blockTYPE_OUTPUT_ON);
+			this.prevPowers = this.powers;
 		}
-	}
-	if (this.state !== prevState) {
-		let blockType = blockTYPE_OUTPUT_OFF;
-		if (this.state === 1) {
-			blockType = blockTYPE_OUTPUT_ON;
+	} else if (this.prevPowers > 0) {
+		for (let i = 0, len = this.outputs.length; i < len; ++i) {
+			--this.outputs[i].powers;
 		}
-		worldUpdateBlock(this.x, this.y, this.z, blockType);
+		worldUpdateBlock(this.x, this.y, this.z, blockTYPE_OUTPUT_OFF);
+		this.prevPowers = this.powers;
 	}
 }
 function LogicNor(x, y, z, state) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
-	this.state = state;
-	this.inputs = [];
+	this.powers = state;
+	this.prevPowers = state;
+	this.outputs = [];
 }
 LogicNor.prototype.updateState = function() {
-	let prevState = this.state;
-	this.state = 1;
-	for (let i = 0; i < this.inputs.length; ++i) {
-		if (this.inputs[i].state === 1) {
-			this.state = 0;
-			break;
+	if (this.powers > 0) {
+		if (this.prevPowers === 0) {
+			for (let i = 0, len = this.outputs.length; i < len; ++i) {
+				--this.outputs[i].powers;
+			}
+			this.prevPowers = this.powers;
 		}
+	} else if (this.prevPowers > 0) {
+		for (let i = 0, len = this.outputs.length; i < len; ++i) {
+			++this.outputs[i].powers;
+		}
+		this.prevPowers = this.powers;
 	}
 }
 function LogicOr(x, y, z, state) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
-	this.state = state;
-	this.inputs = [];
+	this.powers = state;
+	this.prevPowers = state;
+	this.outputs = [];
 }
 LogicOr.prototype.updateState = function() {
-	let prevState = this.state;
-	this.state = 0;
-	for (let i = 0; i < this.inputs.length; ++i) {
-		if (this.inputs[i].state === 1) {
-			this.state = 1;
-			break;
+	if (this.powers > 0) {
+		if (this.prevPowers === 0) {
+			for (let i = 0, len = this.outputs.length; i < len; ++i) {
+				++this.outputs[i].powers;
+			}
+			this.prevPowers = this.powers;
 		}
+	} else if (this.prevPowers > 0) {
+		for (let i = 0, len = this.outputs.length; i < len; ++i) {
+			--this.outputs[i].powers;
+		}
+		this.prevPowers = this.powers;
 	}
 }
 function logicPushIfUnique(list, newEntry) {
@@ -77,116 +90,116 @@ function logicPushIfUnique(list, newEntry) {
 	}
 	list.push(newEntry);
 }
-function logicCompileLogicObject(logicObject) {
-	let outputBlocks = [];
-	let x = logicObject.x, y = logicObject.y, z = logicObject.z;
-	logicFindConnections(x + 1, y, z, worldGetBlock(x + 1, y, z), blockIsOutput, outputBlocks);
-	logicFindConnections(x - 1, y, z, worldGetBlock(x - 1, y, z), blockIsOutput, outputBlocks);
-	logicFindConnections(x, y + 1, z, worldGetBlock(x, y + 1, z), blockIsOutput, outputBlocks);
-	logicFindConnections(x, y - 1, z, worldGetBlock(x, y - 1, z), blockIsOutput, outputBlocks);
-	logicFindConnections(x, y, z + 1, worldGetBlock(x, y, z + 1), blockIsOutput, outputBlocks);
-	logicFindConnections(x, y, z - 1, worldGetBlock(x, y, z - 1), blockIsOutput, outputBlocks);
+function logicCompileOutputObject(outputObject) {
+	let logicBlocks = [];
+	let x = outputObject.x, y = outputObject.y, z = outputObject.z;
+	logicFindConnections(x + 1, y, z, worldGetBlock(x + 1, y, z), blockIsLogic, logicBlocks);
+	logicFindConnections(x - 1, y, z, worldGetBlock(x - 1, y, z), blockIsLogic, logicBlocks);
+	logicFindConnections(x, y + 1, z, worldGetBlock(x, y + 1, z), blockIsLogic, logicBlocks);
+	logicFindConnections(x, y - 1, z, worldGetBlock(x, y - 1, z), blockIsLogic, logicBlocks);
+	logicFindConnections(x, y, z + 1, worldGetBlock(x, y, z + 1), blockIsLogic, logicBlocks);
+	logicFindConnections(x, y, z - 1, worldGetBlock(x, y, z - 1), blockIsLogic, logicBlocks);
 	
-	logicObject.inputs.length = 0;
+	outputObject.outputs.length = 0;
 	// TODO: Could benefit from chunk structure
-	for (let i = 0; i < logicOutputObjects.length; ++i) {
-		let outputObject = logicOutputObjects[i];
-		for (let j = 0; j < outputBlocks.length; ++j) {
-			let output = outputBlocks[j];
-			if (outputObject.x === output.x && outputObject.y === output.y && outputObject.z === output.z) {
-				logicObject.inputs.push(outputObject);
+	for (let i = 0; i < logicLogicObjects.length; ++i) {
+		let logicObject = logicLogicObjects[i];
+		for (let j = 0; j < logicBlocks.length; ++j) {
+			let logic = logicBlocks[j];
+			if (logicObject.x === logic.x && logicObject.y === logic.y && logicObject.z === logic.z) {
+				outputObject.outputs.push(logicObject);
 				break;
 			}
 		}
 	}
 }
-function logicCompileConnectedLogicObjects(x, y, z, wireType) {
+function logicCompileConnectedOutputObjects(x, y, z, wireType) {
 	let connected = [];
 	if (wireType === 0) {
-		logicFindConnections(x, y, z, blockTYPE_WIRE1, blockIsLogic, connected);
-		logicFindConnections(x, y, z, blockTYPE_WIRE2, blockIsLogic, connected);
+		logicFindConnections(x, y, z, blockTYPE_WIRE1, blockIsOutput, connected);
+		logicFindConnections(x, y, z, blockTYPE_WIRE2, blockIsOutput, connected);
 	} else {
-		logicFindConnections(x, y, z, wireType, blockIsLogic, connected);
+		logicFindConnections(x, y, z, wireType, blockIsOutput, connected);
 	}
 	// TODO: Could benefit from chunk structure
 	for (let i = 0; i < connected.length; ++i) {
 		let pos = connected[i];
-		for (let j = 0; j < logicLogicObjects.length; ++j) {
-			let logicObject = logicLogicObjects[j];
-			if (logicObject.x === pos.x && logicObject.y === pos.y && logicObject.z === pos.z) {
-				logicCompileLogicObject(logicObject);
+		for (let j = 0; j < logicOutputObjects.length; ++j) {
+			let outputObject = logicOutputObjects[j];
+			if (outputObject.x === pos.x && outputObject.y === pos.y && outputObject.z === pos.z) {
+				logicCompileOutputObject(outputObject);
 				break;
 			}
 		}
 	}
 }
-function logicCompileOutputObject(outputObject) {
-	let x = outputObject.x, y = outputObject.y, z = outputObject.z;
+function logicCompileLogicObject(logicObject) {
+	let x = logicObject.x, y = logicObject.y, z = logicObject.z;
 	let eastBlock = worldGetBlock(x + 1, y, z), westBlock = worldGetBlock(x - 1, y, z), northBlock = worldGetBlock(x, y, z + 1), southBlock = worldGetBlock(x, y, z - 1), upBlock = worldGetBlock(x, y + 1, z), downBlock = worldGetBlock(x, y - 1, z);
-	outputObject.inputs.length = 0;
+	logicObject.outputs.length = 0;
 	// TODO: Could benefit from chunk structure
-	if (blockIsLogic(eastBlock)) {
-		for (let i = 0; i < logicLogicObjects.length; ++i) {
-			let logicObject = logicLogicObjects[i];
-			if (logicObject.x === x + 1 && logicObject.y === y && logicObject.z === z) {
-				outputObject.inputs.push(logicObject);
+	if (blockIsOutput(eastBlock)) {
+		for (let i = 0; i < logicOutputObjects.length; ++i) {
+			let output = logicOutputObjects[i];
+			if (output.x === x + 1 && output.y === y && output.z === z) {
+				logicObject.outputs.push(output);
 				break;
 			}
 		}
 	}
-	if (blockIsLogic(westBlock)) {
-		for (let i = 0; i < logicLogicObjects.length; ++i) {
-			let logicObject = logicLogicObjects[i];
-			if (logicObject.x === x - 1 && logicObject.y === y && logicObject.z === z) {
-				outputObject.inputs.push(logicObject);
+	if (blockIsOutput(westBlock)) {
+		for (let i = 0; i < logicOutputObjects.length; ++i) {
+			let output = logicOutputObjects[i];
+			if (output.x === x - 1 && output.y === y && output.z === z) {
+				logicObject.outputs.push(output);
 				break;
 			}
 		}
 	}
-	if (blockIsLogic(northBlock)) {
-		for (let i = 0; i < logicLogicObjects.length; ++i) {
-			let logicObject = logicLogicObjects[i];
-			if (logicObject.x === x && logicObject.y === y && logicObject.z === z + 1) {
-				outputObject.inputs.push(logicObject);
+	if (blockIsOutput(northBlock)) {
+		for (let i = 0; i < logicOutputObjects.length; ++i) {
+			let output = logicOutputObjects[i];
+			if (output.x === x && output.y === y && output.z === z + 1) {
+				logicObject.outputs.push(output);
 				break;
 			}
 		}
 	}
-	if (blockIsLogic(southBlock)) {
-		for (let i = 0; i < logicLogicObjects.length; ++i) {
-			let logicObject = logicLogicObjects[i];
-			if (logicObject.x === x && logicObject.y === y && logicObject.z === z - 1) {
-				outputObject.inputs.push(logicObject);
+	if (blockIsOutput(southBlock)) {
+		for (let i = 0; i < logicOutputObjects.length; ++i) {
+			let output = logicOutputObjects[i];
+			if (output.x === x && output.y === y && output.z === z - 1) {
+				logicObject.outputs.push(output);
 				break;
 			}
 		}
 	}
-	if (blockIsLogic(upBlock)) {
-		for (let i = 0; i < logicLogicObjects.length; ++i) {
-			let logicObject = logicLogicObjects[i];
-			if (logicObject.x === x && logicObject.y === y + 1 && logicObject.z === z) {
-				outputObject.inputs.push(logicObject);
+	if (blockIsOutput(upBlock)) {
+		for (let i = 0; i < logicOutputObjects.length; ++i) {
+			let output = logicOutputObjects[i];
+			if (output.x === x && output.y === y + 1 && output.z === z) {
+				logicObject.outputs.push(output);
 				break;
 			}
 		}
 	}
-	if (blockIsLogic(downBlock)) {
-		for (let i = 0; i < logicLogicObjects.length; ++i) {
-			let logicObject = logicLogicObjects[i];
-			if (logicObject.x === x && logicObject.y === y - 1 && logicObject.z === z) {
-				outputObject.inputs.push(logicObject);
+	if (blockIsOutput(downBlock)) {
+		for (let i = 0; i < logicOutputObjects.length; ++i) {
+			let output = logicOutputObjects[i];
+			if (output.x === x && output.y === y - 1 && output.z === z) {
+				logicObject.outputs.push(output);
 				break;
 			}
 		}
 	}
 }
-function logicCompileConnectedOutputObjects(x, y, z) {
+function logicCompileConnectedLogicObjects(x, y, z) {
 	// TODO: Could benefit from chunk structure
-	for (let i = 0; i < logicOutputObjects.length; ++i) {
-		let outputObject = logicOutputObjects[i];
-		if (Math.abs(outputObject.x - x) + Math.abs(outputObject.y - y) + Math.abs(outputObject.z - z) === 1) {
+	for (let i = 0; i < logicLogicObjects.length; ++i) {
+		let logicObject = logicLogicObjects[i];
+		if (Math.abs(logicObject.x - x) + Math.abs(logicObject.y - y) + Math.abs(logicObject.z - z) === 1) {
 			// TODO: Lazy, doesn't need to recompile whole object
-			logicCompileOutputObject(outputObject);
+			logicCompileLogicObject(logicObject);
 		}
 	}
 }
@@ -319,7 +332,7 @@ function logicCompileAll() {
 function logicWriteBlockStates() {
 	for (let i = 0; i < logicLogicObjects.length; ++i) {
 		let object = logicLogicObjects[i];
-		worldSetBlockState(object.x, object.y, object.z, object.state);
+		worldSetBlockState(object.x, object.y, object.z, object.powers > 0);
 	}
 }
 function logicUpdateLogicObjects() {

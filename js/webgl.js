@@ -89,7 +89,7 @@ function gInit() {
 							}
 						}
 						logicOutputObjects.splice(index, 1);
-						logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, 0);
+						logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z);
 					}
 				}
 			} else if (e.button === 1) {
@@ -108,6 +108,7 @@ function gInit() {
 							let logicObject = new LogicNor(pos.x, pos.y, pos.z, 0);
 							logicLogicObjects.push(logicObject);
 							logicCompileLogicObject(logicObject);
+							// TODO: this also compiles neighbouring output objects (not needed)
 							logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z);
 						} else if (gCurrentBlock === blockTYPE_OR) {
 							let logicObject = new LogicOr(pos.x, pos.y, pos.z, 0);
@@ -122,8 +123,7 @@ function gInit() {
 							let outputObject = new LogicOutput(pos.x, pos.y, pos.z, state);
 							logicOutputObjects.push(outputObject);
 							logicCompileOutputObject(outputObject);
-							// TODO: this also compiles neighbouring logic objects (not actually connected)
-							logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, 0);
+							logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z);
 						}
 					}
 				}
