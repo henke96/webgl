@@ -549,11 +549,11 @@ function worldLoadFile(event) {
 			let buffer = event.target.result;
 			let array = new Uint8Array(buffer);
 			logicInit();
-			let chunkBaseIndex = 0;
+			let blockIndex = 0;
 			for (let i = 0; i < worldChunks.length; ++i) {
 				let chunk = worldChunks[i];
-				for (let j = 0; j < 4096; ++j) {
-					let block = array[chunkBaseIndex + j];
+				for (let j = 0; j < 4096; ++j, ++blockIndex) {
+					let block = array[blockIndex];
 					chunk.blocks[j] = block;
 					switch (block & blockNO_STATE_MASK) {
 					case blockTYPE_NOR:
@@ -571,7 +571,6 @@ function worldLoadFile(event) {
 					}
 				}
 				chunk.dirty = worldDIRTY_DYNAMIC_BIT | worldDIRTY_STATIC_BIT;
-				chunkBaseIndex += 4096;
 			}
 			logicCompileAll();
 		}
