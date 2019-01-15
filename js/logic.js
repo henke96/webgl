@@ -1,5 +1,5 @@
 'use strict';
-const logicBASE_SPEED = 100;
+const logicSPEED_THRESHOLD = 100;
 const logicSPEED = 100;
 
 const logicEAST_BIT = 0x1;
@@ -92,7 +92,7 @@ function logicOnWireAdded(x, y, z, block) {
 function logicOnWireRemoved(x, y, z, block) {
 	let outputBlocks = [];
 	logicFindConnections(x, y, z, block, blockIsOutput, outputBlocks);
-	// TODO: Could benefit from chunk structure
+	
 	for (let i = 0; i < outputBlocks.length; ++i) {
 		let pos = outputBlocks[i];
 		for (let j = 0; j < logicOutputObjects.length; ++j) {
@@ -150,7 +150,7 @@ function logicOnOutputBlockAdded(x, y, z, block) {
 	logicFindConnections(x, y - 1, z, worldGetBlock(x, y - 1, z), blockIsLogic, logicBlocks);
 	logicFindConnections(x, y, z + 1, worldGetBlock(x, y, z + 1), blockIsLogic, logicBlocks);
 	logicFindConnections(x, y, z - 1, worldGetBlock(x, y, z - 1), blockIsLogic, logicBlocks);
-	// TODO: Could benefit from chunk structure
+	
 	for (let i = 0; i < logicLogicObjects.length; ++i) {
 		let logicObject = logicLogicObjects[i];
 		for (let j = 0; j < logicBlocks.length; ++j) {
@@ -172,7 +172,7 @@ function logicOnOutputBlockAdded(x, y, z, block) {
 			}	
 		}
 	}
-	// TODO: Could benefit from chunk structure
+	
 	for (let i = 0; i < logicLogicObjects.length; ++i) {
 		let logicObject = logicLogicObjects[i];
 		if (Math.abs(logicObject.x - x) + Math.abs(logicObject.y - y) + Math.abs(logicObject.z - z) === 1) {
@@ -190,7 +190,7 @@ function logicOnOutputBlockAdded(x, y, z, block) {
 function logicOnOutputBlockRemoved(x, y, z, block) {
 	let powered = (block === blockTYPE_OUTPUT_ON);
 	let outputObject;
-	// TODO: Could benefit from chunk structure
+	
 	for (let i = 0; i < logicOutputObjects.length; ++i) {
 		let output = logicOutputObjects[i];
 		if (x === output.x && y === output.y && z === output.z) {
@@ -215,7 +215,7 @@ function logicOnOutputBlockRemoved(x, y, z, block) {
 			}	
 		}
 	}
-	// TODO: Could benefit from chunk structure
+	
 	for (let i = 0; i < logicLogicObjects.length; ++i) {
 		let logicObject = logicLogicObjects[i];
 		if (Math.abs(logicObject.x - x) + Math.abs(logicObject.y - y) + Math.abs(logicObject.z - z) === 1) {
@@ -230,7 +230,7 @@ function logicOnLogicBlockAdded(x, y, z, block) {
 	logicLogicObjects.push(logicObject);
 	logicObject.dirty = true;
 	logicDirtyLogic[logicDirtyLogicSize++] = logicObject;
-	// TODO: Could benefit from chunk structure
+	
 	for (let i = 0; i < logicOutputObjects.length; ++i) {
 		let outputObject = logicOutputObjects[i];
 		if (Math.abs(outputObject.x - x) + Math.abs(outputObject.y - y) + Math.abs(outputObject.z - z) === 1) {
@@ -254,7 +254,7 @@ function logicOnLogicBlockAdded(x, y, z, block) {
 	logicFindConnections(x, y - 1, z, worldGetBlock(x, y - 1, z), blockIsOutput, outputBlocks);
 	logicFindConnections(x, y, z + 1, worldGetBlock(x, y, z + 1), blockIsOutput, outputBlocks);
 	logicFindConnections(x, y, z - 1, worldGetBlock(x, y, z - 1), blockIsOutput, outputBlocks);
-	// TODO: Could benefit from chunk structure
+	
 	for (let i = 0; i < logicOutputObjects.length; ++i) {
 		let outputObject = logicOutputObjects[i];
 		for (let j = 0; j < outputBlocks.length; ++j) {
@@ -272,7 +272,7 @@ function logicOnLogicBlockAdded(x, y, z, block) {
 function logicOnLogicBlockRemoved(x, y, z, block) {
 	let inverts = ((block & blockNO_STATE_MASK) === blockTYPE_NOR);
 	let logicObject;
-	// TODO: Could benefit from chunk structure
+	
 	for (let i = 0; i < logicLogicObjects.length; ++i) {
 		let logic = logicLogicObjects[i];
 		if (x === logic.x && y === logic.y && z === logic.z) {
@@ -303,7 +303,7 @@ function logicOnLogicBlockRemoved(x, y, z, block) {
 	logicFindConnections(x, y - 1, z, worldGetBlock(x, y - 1, z), blockIsOutput, outputBlocks);
 	logicFindConnections(x, y, z + 1, worldGetBlock(x, y, z + 1), blockIsOutput, outputBlocks);
 	logicFindConnections(x, y, z - 1, worldGetBlock(x, y, z - 1), blockIsOutput, outputBlocks);
-	// TODO: Could benefit from chunk structure
+	
 	for (let i = 0; i < logicOutputObjects.length; ++i) {
 		let outputObject = logicOutputObjects[i];
 		for (let j = 0; j < outputBlocks.length; ++j) {
@@ -521,10 +521,10 @@ function logicUpdateOutputObjects() {
 }
 function logicUpdate() {
 	logicSpeedProgress += logicSPEED;
-	while (logicSpeedProgress >= logicBASE_SPEED) {
+	while (logicSpeedProgress >= logicSPEED_THRESHOLD) {
 		logicUpdateLogicObjects();
 		logicUpdateOutputObjects();
-		logicSpeedProgress -= logicBASE_SPEED;
+		logicSpeedProgress -= logicSPEED_THRESHOLD;
 	}
 }
 function logicInit() {
