@@ -524,11 +524,13 @@ function worldSaveFile() {
 	window.URL.revokeObjectURL(url);
 }
 function worldGenerate() {
-	logicInit();
 	for (let x = 0; x < worldSizeXChunks << 4; ++x) {
 		for (let y = 0; y < worldSizeYChunks << 4; ++y) {
 			for (let z = 0; z < worldSizeZChunks << 4; ++z) {
-				//worldSetBlock(x, y, z, Math.random()*2);
+				let prevBlock = worldGetBlock(x, y, z);
+				if (prevBlock !== 0) {
+					logicOnBlockRemoved(x, y, z, block);
+				}
 				if (y < 15) {
 					worldSetBlock(x, y, z, blockTYPE_DIRT);
 				} else if (y > 15) {
@@ -551,10 +553,13 @@ function worldLoadFile(event) {
 			let chunkBaseIndex = 0;
 			for (let i = 0; i < worldChunks.length; ++i) {
 				let chunk = worldChunks[i];
+				let chunkX = chunk.xChunk << 4, chunkY = chunk.yChunk << 4, chunkZ = chunk.zChunk << 4;
 				for (let j = 0; j < 4096; ++j) {
 					let block = array[chunkBaseIndex + j];
+					let x = chunkX + (j >>> 8), y = chunkY + ((j >>> 4) & 0xf), z = chunkZ + (j & 0xf); 
+					logicOnBlockRemoved(x, y, z, chunk.blocks[j]);
 					chunk.blocks[j] = block;
-					logicOnBlockAdded((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), block);
+					logicOnBlockAdded(x, y, z, block);
 				}
 				chunk.dirty = worldDIRTY_DYNAMIC_BIT | worldDIRTY_STATIC_BIT;
 				chunkBaseIndex += 4096;

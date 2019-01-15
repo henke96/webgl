@@ -70,6 +70,23 @@ function gInit() {
 				let pos = worldGetInteractPos(false);
 				if (pos !== null) {
 					gCurrentBlock = worldGetBlock(pos.x, pos.y, pos.z);
+					/*if (blockIsOutput(gCurrentBlock)) {
+						for (let i = 0; i < logicOutputObjects.length; ++i) {
+							let outputObject = logicOutputObjects[i];
+							if (outputObject.x === pos.x && outputObject.y === pos.y && outputObject.z === pos.z) {
+								console.log(outputObject);
+								break;
+							}
+						}
+					} else if (blockIsLogic(gCurrentBlock)) {
+						for (let i = 0; i < logicLogicObjects.length; ++i) {
+							let outputObject = logicLogicObjects[i];
+							if (outputObject.x === pos.x && outputObject.y === pos.y && outputObject.z === pos.z) {
+								console.log(outputObject);
+								break;
+							}
+						}
+					}*/
 				}
 			} else if (e.button === 2) {
 				if (gCurrentBlock !== 0) {

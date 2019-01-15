@@ -44,50 +44,14 @@ function worldeditRestoreVolume() {
 	for (let x = startX; x < endX; ++x) {
 		for (let y = startY; y < endY; ++y) {
 			for (let z = startZ; z < endZ; ++z, ++index) {
-				worldSetBlock(x, y, z, worldeditStoredBlocks[index]);
+				logicOnBlockRemoved(x, y, z, worldGetBlock(x, y, z));
+				let block = worldeditStoredBlocks[index];
+				worldSetBlock(x, y, z, block);
+				logicOnBlockAdded(x, y, z, block);
 			}
 		}
 	}
-	worldeditOnVolumeChanged(startX, startY, startZ, endX, endY, endZ);
 	worldeditStoredVolume.startX = -1;
-}
-function worldeditOnVolumeChanged(pasteX, pasteY, pasteZ, endX, endY, endZ) {
-	let i = logicLogicObjects.length;
-	while (i--) {
-		let logicObject = logicLogicObjects[i];
-		if (logicObject.x >= pasteX && logicObject.x < endX && logicObject.y >= pasteY && logicObject.y < endY && logicObject.z >= pasteZ && logicObject.z < endZ) {
-			logicLogicObjects.splice(i, 1);
-		}
-	}
-	i = logicOutputObjects.length;
-	while (i--) {
-		let outputObject = logicOutputObjects[i];
-		if (outputObject.x >= pasteX && outputObject.x < endX && outputObject.y >= pasteY && outputObject.y < endY && outputObject.z >= pasteZ && outputObject.z < endZ) {
-			logicOutputObjects.splice(i, 1);
-		}
-	}
-	for (let x = pasteX; x < endX; ++x) {
-		for (let y = pasteY; y < endY; ++y) {
-			for (let z = pasteZ; z < endZ; ++z) {
-				let block = worldGetBlock(x, y, z);
-				switch (block & blockNO_STATE_MASK) {
-				case blockTYPE_NOR:
-					logicLogicObjects.push(new LogicNor(x, y, z, (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-					break;
-				case blockTYPE_OR:
-					logicLogicObjects.push(new LogicOr(x, y, z, (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-					break;
-				case blockTYPE_OUTPUT_OFF:
-					logicOutputObjects.push(new LogicOutput(x, y, z));
-					break;
-				case blockTYPE_OUTPUT_ON:
-					logicOutputObjects.push(new LogicOutput(x, y, z));
-					break;				 
-				}
-			}
-		}
-	}
-	logicCompileAll();
 }
 function worldeditFill() {
 	let fillX = worldeditSelection.x, fillY = worldeditSelection.y, fillZ = worldeditSelection.z;
@@ -97,11 +61,12 @@ function worldeditFill() {
 	for (let x = fillX; x < endX; ++x) {
 		for (let y = fillY; y < endY; ++y) {
 			for (let z = fillZ; z < endZ; ++z) {
+				logicOnBlockRemoved(x, y, z, worldGetBlock(x, y, z));
 				worldSetBlock(x, y, z, gCurrentBlock);
+				logicOnBlockAdded(x, y, z, gCurrentBlock);
 			}
 		}
 	}
-	worldeditOnVolumeChanged(fillX, fillY, fillZ, endX, endY, endZ);
 }
 function worldeditPaste(pasteX, pasteY, pasteZ) {
 	let dx = worldeditSelection.dx, dy = worldeditSelection.dy, dz = worldeditSelection.dz;
@@ -111,11 +76,13 @@ function worldeditPaste(pasteX, pasteY, pasteZ) {
 	for (let x = pasteX; x < endX; ++x) {
 		for (let y = pasteY; y < endY; ++y) {
 			for (let z = pasteZ; z < endZ; ++z, ++index) {
-				worldSetBlock(x, y, z, worldeditBlocks[index]);
+				logicOnBlockRemoved(x, y, z, worldGetBlock(x, y, z));
+				let block = worldeditBlocks[index];
+				worldSetBlock(x, y, z, block);
+				logicOnBlockAdded(x, y, z, block);
 			}
 		}
 	}
-	worldeditOnVolumeChanged(pasteX, pasteY, pasteZ, endX, endY, endZ);
 }
 function worldeditSetPos() {
 	if (worldeditSelection.x !== -1 || worldeditPrevPos.x === -1) {
