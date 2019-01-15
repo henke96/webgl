@@ -548,32 +548,17 @@ function worldLoadFile(event) {
 		fileReader.onload = function(event) {
 			let buffer = event.target.result;
 			let array = new Uint8Array(buffer);
-			logicInit();
 			let chunkBaseIndex = 0;
 			for (let i = 0; i < worldChunks.length; ++i) {
 				let chunk = worldChunks[i];
 				for (let j = 0; j < 4096; ++j) {
 					let block = array[chunkBaseIndex + j];
 					chunk.blocks[j] = block;
-					switch (block & blockNO_STATE_MASK) {
-					case blockTYPE_NOR:
-						logicLogicObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-						break;
-					case blockTYPE_OR:
-						logicLogicObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-						break;
-					case blockTYPE_OUTPUT_OFF:
-						logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
-						break;
-					case blockTYPE_OUTPUT_ON:
-						logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
-						break;				 
-					}
+					logicOnBlockAdded((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), block);
 				}
 				chunk.dirty = worldDIRTY_DYNAMIC_BIT | worldDIRTY_STATIC_BIT;
 				chunkBaseIndex += 4096;
 			}
-			logicCompileAll();
 		}
 		fileReader.readAsArrayBuffer(file);
 	}
@@ -600,7 +585,6 @@ function worldLoadPrev() {
 	}
 }
 function worldLoadFromString(world) {
-	logicInit();
 	let chunkBaseIndex = 0;
 	for (let i = 0; i < worldChunks.length; ++i) {
 		let chunk = worldChunks[i];
@@ -612,25 +596,11 @@ function worldLoadFromString(world) {
 				block &= 0xFF;
 			}
 			chunk.blocks[j] = block;
-			switch (block & blockNO_STATE_MASK) {
-			case blockTYPE_NOR:
-				logicLogicObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-				break;
-			case blockTYPE_OR:
-				logicLogicObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-				break;
-			case blockTYPE_OUTPUT_OFF:
-				logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
-				break;
-			case blockTYPE_OUTPUT_ON:
-				logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
-				break;				 
-			}
+			logicOnBlockAdded((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), block);
 		}
 		chunk.dirty = worldDIRTY_DYNAMIC_BIT | worldDIRTY_STATIC_BIT;
 		chunkBaseIndex += 2048;
 	}
-	logicCompileAll();
 }
 function worldInit() {
 	document.getElementById("loadFileInput").onchange = worldLoadFile;

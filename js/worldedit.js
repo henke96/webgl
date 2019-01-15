@@ -78,10 +78,10 @@ function worldeditOnVolumeChanged(pasteX, pasteY, pasteZ, endX, endY, endZ) {
 					logicLogicObjects.push(new LogicOr(x, y, z, (block >>> blockSTATE_BIT_DIGIT) & 0x1));
 					break;
 				case blockTYPE_OUTPUT_OFF:
-					logicOutputObjects.push(new LogicOutput(x, y, z, 0));
+					logicOutputObjects.push(new LogicOutput(x, y, z));
 					break;
 				case blockTYPE_OUTPUT_ON:
-					logicOutputObjects.push(new LogicOutput(x, y, z, 1));
+					logicOutputObjects.push(new LogicOutput(x, y, z));
 					break;				 
 				}
 			}

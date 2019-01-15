@@ -64,67 +64,19 @@ function gInit() {
 				if (pos !== null) {
 					let oldBlock = worldGetBlock(pos.x, pos.y, pos.z);
 					worldSetBlock(pos.x, pos.y, pos.z, 0);
-					if (blockIsWire(oldBlock)) {
-						logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, oldBlock);
-					} else if (blockIsLogic(oldBlock)) {
-						// TODO: Could benefit from chunk structure
-						let index;
-						for (let i = 0; i < logicLogicObjects.length; ++i) {
-							let logicObject = logicLogicObjects[i];
-							if (logicObject.x === pos.x && logicObject.y === pos.y && logicObject.z === pos.z) {
-								index = i;
-								break;
-							}
-						}
-						logicLogicObjects.splice(index, 1);
-						logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z, 0);
-					} else if (blockIsOutput(oldBlock)) {
-						// TODO: Could benefit from chunk structure
-						let index;
-						for (let i = 0; i < logicOutputObjects.length; ++i) {
-							let outputObject = logicOutputObjects[i];
-							if (outputObject.x === pos.x && outputObject.y === pos.y && outputObject.z === pos.z) {
-								index = i;
-								break;
-							}
-						}
-						logicOutputObjects.splice(index, 1);
-						logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z);
-					}
+					logicOnBlockRemoved(pos.x, pos.y, pos.z, oldBlock);
 				}
 			} else if (e.button === 1) {
 				let pos = worldGetInteractPos(false);
 				if (pos !== null) {
-					gCurrentBlock = (worldGetBlock(pos.x, pos.y, pos.z) & blockNO_STATE_MASK);
+					gCurrentBlock = worldGetBlock(pos.x, pos.y, pos.z);
 				}
 			} else if (e.button === 2) {
 				if (gCurrentBlock !== 0) {
 					let pos = worldGetInteractPos(true);
 					if (pos !== null) {
 						worldSetBlock(pos.x, pos.y, pos.z, gCurrentBlock);
-						if (blockIsWire(gCurrentBlock)) {
-							logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, gCurrentBlock);
-						} else if (gCurrentBlock === blockTYPE_NOR) {
-							let logicObject = new LogicNor(pos.x, pos.y, pos.z, 0);
-							logicLogicObjects.push(logicObject);
-							logicCompileLogicObject(logicObject);
-							// TODO: this also compiles neighbouring output objects (not needed)
-							logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z);
-						} else if (gCurrentBlock === blockTYPE_OR) {
-							let logicObject = new LogicOr(pos.x, pos.y, pos.z, 0);
-							logicLogicObjects.push(logicObject);
-							logicCompileLogicObject(logicObject);
-							logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z);
-						} else if (blockIsOutput(gCurrentBlock)) {
-							let state = 0;
-							if (gCurrentBlock === blockTYPE_OUTPUT_ON) {
-								state = 1;
-							}
-							let outputObject = new LogicOutput(pos.x, pos.y, pos.z, state);
-							logicOutputObjects.push(outputObject);
-							logicCompileOutputObject(outputObject);
-							logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z);
-						}
+						logicOnBlockAdded(pos.x, pos.y, pos.z, gCurrentBlock);
 					}
 				}
 			}
