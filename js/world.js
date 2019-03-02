@@ -421,11 +421,11 @@ function worldGetInteractPos(infront) {
 	let componentZ = -cosXAngle*Math.cos(yAngle);
 	let componentX = -cosXAngle*Math.sin(yAngle);
 	let componentY = Math.sin(xAngle);
-	
+
 	let x = renderCamera.x;
 	let y = renderCamera.y;
 	let z = renderCamera.z;
-	
+
 	const maxDistanceSquared = 5*5;
 	let xBlock, yBlock, zBlock;
 	let prevXBlock, prevYBlock, prevZBlock;
@@ -524,18 +524,23 @@ function worldSaveFile() {
 	window.URL.revokeObjectURL(url);
 }
 function worldGenerate() {
+	let perlin = new Perlin(new Date());
+
 	for (let x = 0; x < worldSizeXChunks << 4; ++x) {
-		for (let y = 0; y < worldSizeYChunks << 4; ++y) {
-			for (let z = 0; z < worldSizeZChunks << 4; ++z) {
+		for (let z = 0; z < worldSizeZChunks << 4; ++z) {
+			for (let y = 0; y < worldSizeYChunks << 4; ++y) {
 				let prevBlock = worldGetBlock(x, y, z);
 				if (prevBlock !== 0) {
-					logicOnBlockRemoved(x, y, z, block);
+					logicOnBlockRemoved(x, y, z, prevBlock);
 				}
-				if (y < 15) {
-					worldSetBlock(x, y, z, blockTYPE_DIRT);
-				} else if (y > 15) {
-					worldSetBlock(x, y, z, 0);
-				} else {
+				worldSetBlock(x, y, z, 0);
+			}
+			let height = 32 + Math.round(perlin.noise(x/50, z/50, 0)*((worldSizeYChunks << 4) - 1 - 32));
+
+			//console.log(height);
+			for (let y = 0; y < height; ++y) {
+				let density = perlin.noise(x/50, y/50, z/50) + ((height*0.5 - y)/height);
+				if (density > 0.5) {
 					worldSetBlock(x, y, z, blockTYPE_GRASS);
 				}
 			}
@@ -556,7 +561,7 @@ function worldLoadFile(event) {
 				let chunkX = chunk.xChunk << 4, chunkY = chunk.yChunk << 4, chunkZ = chunk.zChunk << 4;
 				for (let j = 0; j < 4096; ++j) {
 					let block = array[chunkBaseIndex + j];
-					let x = chunkX + (j >>> 8), y = chunkY + ((j >>> 4) & 0xf), z = chunkZ + (j & 0xf); 
+					let x = chunkX + (j >>> 8), y = chunkY + ((j >>> 4) & 0xf), z = chunkZ + (j & 0xf);
 					logicOnBlockRemoved(x, y, z, chunk.blocks[j]);
 					chunk.blocks[j] = block;
 					logicOnBlockAdded(x, y, z, block);
@@ -621,14 +626,14 @@ function worldInit() {
 	document.getElementById(HTML_SAVE_FILE_BUTTON).onclick = function() {
 		worldSaveFile();
 	};
-	
+
     worldLoadPrev();
 	let maxVisibleQuads = (1 << 12)*3;
 	let maxVertices = maxVisibleQuads*4;
 	let maxIndices = maxVisibleQuads*6;
 	worldVertices = new Float32Array(maxVertices*renderVertexComponents);
 	worldIndices = new Float32Array(maxIndices);
-	
+
 	/*let block = 0;
 	for (let x = 0; x < worldSizeXChunks*16; ++x) {
 		for (let y = 0; y < worldSizeYChunks*16; ++y) {

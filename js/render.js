@@ -4,11 +4,11 @@ const renderVertexShaderSource = `
 	attribute vec4 aVertexPosition;
 	attribute vec4 aVertexColor;
 	attribute mat4 aModelViewMatrix;
-	
+
 	uniform mat4 uProjectionMatrix;
-	
+
 	varying vec4 vColor;
-	
+
 	void main() {
 		gl_Position = uProjectionMatrix * aModelViewMatrix * aVertexPosition;
 		vColor = aVertexColor;
@@ -17,7 +17,7 @@ const renderVertexShaderSource = `
 const renderFragmentShaderSource = `
 	precision mediump float;
 	varying vec4 vColor;
-	
+
 	void main() {
 		gl_FragColor = vColor;
 	}
@@ -110,17 +110,17 @@ function RenderVertexArray(glBufferUsage, glIndexType) {
 	this.vertexBuffer = gl.createBuffer();
 	this.indexBuffer = gl.createBuffer();
 	this.mvpBuffer = gl.createBuffer();
-	
+
 	gl.bindVertexArray(this.vertexArray);
-	
+
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
 	gl.vertexAttribPointer(renderProgramInfo.aLocations.vertexPosition, renderPositionComponents, renderPositionType, false, renderVertexSize, 0);
 	gl.enableVertexAttribArray(renderProgramInfo.aLocations.vertexPosition);
 	gl.vertexAttribPointer(renderProgramInfo.aLocations.vertexColor, renderColorComponents, renderColorType, false, renderVertexSize, renderPositionTypeSize*renderPositionComponents);
 	gl.enableVertexAttribArray(renderProgramInfo.aLocations.vertexColor);
-	
+
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-	
+
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.mvpBuffer);
 	for (let i = 0; i < 4; ++i) {
 		let loc = renderProgramInfo.aLocations.modelViewMatrix + i;
@@ -145,9 +145,9 @@ RenderVertexArray.prototype.finalizeModels = function() {
 		verticesLength += model.vertices.length;
 		indicesLength += model.indices.length;
 	}
-	
+
 	let vertices = new Float32Array(verticesLength);
-	
+
 	let indices;
 	if (this.glIndexType === gl.UNSIGNED_INT) {
 		indices = new Uint32Array(indicesLength);
@@ -167,7 +167,7 @@ RenderVertexArray.prototype.finalizeModels = function() {
 		}
 		verticesIndex += model.vertices.length;
 	}
-	
+
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
 	/*if (this.vertexBufferLength < vertices.length) {
 		if (this.isDynamic) {
@@ -180,7 +180,7 @@ RenderVertexArray.prototype.finalizeModels = function() {
 	}*/
 	//gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertices);
 	gl.bufferData(gl.ARRAY_BUFFER, vertices, this.glBufferUsage);
-	
+
 	gl.bindVertexArray(this.vertexArray);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
 	/*if (this.indexBufferLength < indices.length) {
@@ -231,7 +231,7 @@ function renderInit(near, far, widthRatio) {
 	};
 	renderCamera = {
 		x: 32,
-		y: 32,
+		y: 100,
 		z: 32,
 		xAngle: 0,
 		yAngle: 0
