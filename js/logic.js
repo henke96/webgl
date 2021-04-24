@@ -1,5 +1,5 @@
 'use strict';
-const logicBASE_SPEED = 100;
+const logicBASE_SPEED = 1;
 const logicSPEED = 100;
 
 const logicEAST_BIT = 0x1;
@@ -10,64 +10,67 @@ const logicUP_BIT = 0x10;
 const logicDOWN_BIT = 0x20;
 const logicBACKTRACKED_BIT = 0x40;
 
-function LogicOutput(x, y, z, state) {
-	this.x = x;
-	this.y = y;
-	this.z = z;
-	this.state = state;
-	this.inputs = [];
-}
-LogicOutput.prototype.updateState = function() {
-	let prevState = this.state;
-	this.state = 0;
-	for (let i = 0; i < this.inputs.length; ++i) {
-		if (this.inputs[i].state === 1) {
-			this.state = 1;
-			break;
-		}
-	}
-	if (this.state !== prevState) {
-		let blockType = blockTYPE_OUTPUT_OFF;
-		if (this.state === 1) {
-			blockType = blockTYPE_OUTPUT_ON;
-		}
-		worldUpdateBlock(this.x, this.y, this.z, blockType);
-	}
-}
 function LogicNor(x, y, z, state) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
 	this.state = state;
+	this.nextState = undefined;
 	this.inputs = [];
 }
+
 LogicNor.prototype.updateState = function() {
-	let prevState = this.state;
-	this.state = 1;
+	this.nextState = 1;
 	for (let i = 0; i < this.inputs.length; ++i) {
 		if (this.inputs[i].state === 1) {
-			this.state = 0;
+			this.nextState = 0;
 			break;
 		}
 	}
+	
 }
+
+LogicNor.prototype.finalize = function() {
+	if (this.nextState !== this.state) {
+		this.state = this.nextState;
+		let blockType = blockTYPE_NOR_OFF;
+		if (this.state === 1) {
+			blockType = blockTYPE_NOR_ON;
+		}
+		worldUpdateBlock(this.x, this.y, this.z, blockType);
+	}
+}
+
 function LogicOr(x, y, z, state) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
 	this.state = state;
+	this.nextState = undefined;
 	this.inputs = [];
 }
+
 LogicOr.prototype.updateState = function() {
-	let prevState = this.state;
-	this.state = 0;
+	this.nextState = 0;
 	for (let i = 0; i < this.inputs.length; ++i) {
 		if (this.inputs[i].state === 1) {
-			this.state = 1;
+			this.nextState = 1;
 			break;
 		}
 	}
+	
 }
+LogicOr.prototype.finalize = function() {
+	if (this.nextState !== this.state) {
+		this.state = this.nextState;
+		let blockType = blockTYPE_OR_OFF;
+		if (this.state === 1) {
+			blockType = blockTYPE_OR_ON;
+		}
+		worldUpdateBlock(this.x, this.y, this.z, blockType);
+	}
+}
+
 function logicPushIfUnique(list, newEntry) {
 	for (let i = 0; i < list.length; ++i) {
 		let entry = list[i];
@@ -77,120 +80,42 @@ function logicPushIfUnique(list, newEntry) {
 	}
 	list.push(newEntry);
 }
+
+function logicInputFindConnections(x, y, z, block, connections) {
+	if (block !== blockTYPE_INPUT) return;
+	logicFindConnections(x + 1, y, z, worldGetBlock(x + 1, y, z), connections);
+	logicFindConnections(x - 1, y, z, worldGetBlock(x - 1, y, z), connections);
+	logicFindConnections(x, y + 1, z, worldGetBlock(x, y + 1, z), connections);
+	logicFindConnections(x, y - 1, z, worldGetBlock(x, y - 1, z), connections);
+	logicFindConnections(x, y, z + 1, worldGetBlock(x, y, z + 1), connections);
+	logicFindConnections(x, y, z - 1, worldGetBlock(x, y, z - 1), connections);
+}
+
 function logicCompileLogicObject(logicObject) {
-	let outputBlocks = [];
+	let connections = [];
 	let x = logicObject.x, y = logicObject.y, z = logicObject.z;
-	logicFindConnections(x + 1, y, z, worldGetBlock(x + 1, y, z), blockIsOutput, outputBlocks);
-	logicFindConnections(x - 1, y, z, worldGetBlock(x - 1, y, z), blockIsOutput, outputBlocks);
-	logicFindConnections(x, y + 1, z, worldGetBlock(x, y + 1, z), blockIsOutput, outputBlocks);
-	logicFindConnections(x, y - 1, z, worldGetBlock(x, y - 1, z), blockIsOutput, outputBlocks);
-	logicFindConnections(x, y, z + 1, worldGetBlock(x, y, z + 1), blockIsOutput, outputBlocks);
-	logicFindConnections(x, y, z - 1, worldGetBlock(x, y, z - 1), blockIsOutput, outputBlocks);
+	logicInputFindConnections(x + 1, y, z, worldGetBlock(x + 1, y, z), connections);
+	logicInputFindConnections(x - 1, y, z, worldGetBlock(x - 1, y, z), connections);
+	logicInputFindConnections(x, y + 1, z, worldGetBlock(x, y + 1, z), connections);
+	logicInputFindConnections(x, y - 1, z, worldGetBlock(x, y - 1, z), connections);
+	logicInputFindConnections(x, y, z + 1, worldGetBlock(x, y, z + 1), connections);
+	logicInputFindConnections(x, y, z - 1, worldGetBlock(x, y, z - 1), connections);
 	
 	logicObject.inputs.length = 0;
 	// TODO: Could benefit from chunk structure
-	for (let i = 0; i < logicOutputObjects.length; ++i) {
-		let outputObject = logicOutputObjects[i];
-		for (let j = 0; j < outputBlocks.length; ++j) {
-			let output = outputBlocks[j];
-			if (outputObject.x === output.x && outputObject.y === output.y && outputObject.z === output.z) {
-				logicObject.inputs.push(outputObject);
+	for (let i = 0; i < logicObjects.length; ++i) {
+		let object = logicObjects[i];
+		for (let j = 0; j < connections.length; ++j) {
+			let connection = connections[j];
+			if (object.x === connection.x && object.y === connection.y && object.z === connection.z) {
+				logicObject.inputs.push(object);
 				break;
 			}
 		}
 	}
 }
-function logicCompileConnectedLogicObjects(x, y, z, wireType) {
-	let connected = [];
-	if (wireType === 0) {
-		logicFindConnections(x, y, z, blockTYPE_WIRE1, blockIsLogic, connected);
-		logicFindConnections(x, y, z, blockTYPE_WIRE2, blockIsLogic, connected);
-	} else {
-		logicFindConnections(x, y, z, wireType, blockIsLogic, connected);
-	}
-	// TODO: Could benefit from chunk structure
-	for (let i = 0; i < connected.length; ++i) {
-		let pos = connected[i];
-		for (let j = 0; j < logicLogicObjects.length; ++j) {
-			let logicObject = logicLogicObjects[j];
-			if (logicObject.x === pos.x && logicObject.y === pos.y && logicObject.z === pos.z) {
-				logicCompileLogicObject(logicObject);
-				break;
-			}
-		}
-	}
-}
-function logicCompileOutputObject(outputObject) {
-	let x = outputObject.x, y = outputObject.y, z = outputObject.z;
-	let eastBlock = worldGetBlock(x + 1, y, z), westBlock = worldGetBlock(x - 1, y, z), northBlock = worldGetBlock(x, y, z + 1), southBlock = worldGetBlock(x, y, z - 1), upBlock = worldGetBlock(x, y + 1, z), downBlock = worldGetBlock(x, y - 1, z);
-	outputObject.inputs.length = 0;
-	// TODO: Could benefit from chunk structure
-	if (blockIsLogic(eastBlock)) {
-		for (let i = 0; i < logicLogicObjects.length; ++i) {
-			let logicObject = logicLogicObjects[i];
-			if (logicObject.x === x + 1 && logicObject.y === y && logicObject.z === z) {
-				outputObject.inputs.push(logicObject);
-				break;
-			}
-		}
-	}
-	if (blockIsLogic(westBlock)) {
-		for (let i = 0; i < logicLogicObjects.length; ++i) {
-			let logicObject = logicLogicObjects[i];
-			if (logicObject.x === x - 1 && logicObject.y === y && logicObject.z === z) {
-				outputObject.inputs.push(logicObject);
-				break;
-			}
-		}
-	}
-	if (blockIsLogic(northBlock)) {
-		for (let i = 0; i < logicLogicObjects.length; ++i) {
-			let logicObject = logicLogicObjects[i];
-			if (logicObject.x === x && logicObject.y === y && logicObject.z === z + 1) {
-				outputObject.inputs.push(logicObject);
-				break;
-			}
-		}
-	}
-	if (blockIsLogic(southBlock)) {
-		for (let i = 0; i < logicLogicObjects.length; ++i) {
-			let logicObject = logicLogicObjects[i];
-			if (logicObject.x === x && logicObject.y === y && logicObject.z === z - 1) {
-				outputObject.inputs.push(logicObject);
-				break;
-			}
-		}
-	}
-	if (blockIsLogic(upBlock)) {
-		for (let i = 0; i < logicLogicObjects.length; ++i) {
-			let logicObject = logicLogicObjects[i];
-			if (logicObject.x === x && logicObject.y === y + 1 && logicObject.z === z) {
-				outputObject.inputs.push(logicObject);
-				break;
-			}
-		}
-	}
-	if (blockIsLogic(downBlock)) {
-		for (let i = 0; i < logicLogicObjects.length; ++i) {
-			let logicObject = logicLogicObjects[i];
-			if (logicObject.x === x && logicObject.y === y - 1 && logicObject.z === z) {
-				outputObject.inputs.push(logicObject);
-				break;
-			}
-		}
-	}
-}
-function logicCompileConnectedOutputObjects(x, y, z) {
-	// TODO: Could benefit from chunk structure
-	for (let i = 0; i < logicOutputObjects.length; ++i) {
-		let outputObject = logicOutputObjects[i];
-		if (Math.abs(outputObject.x - x) + Math.abs(outputObject.y - y) + Math.abs(outputObject.z - z) === 1) {
-			// TODO: Lazy, doesn't need to recompile whole object
-			logicCompileOutputObject(outputObject);
-		}
-	}
-}
-function logicFindConnections(x, y, z, wireType, blockFunction, list) {
+
+function logicFindConnections(x, y, z, wireType, list) {
 	if (!blockIsWire(wireType)) {
 		return;
 	}
@@ -206,7 +131,7 @@ function logicFindConnections(x, y, z, wireType, blockFunction, list) {
 				blockEast = worldGetBlock(x + 1, y, z);
 				if (blockEast === wireType) {
 					availableBranches |= logicEAST_BIT;
-				} else if (blockFunction(blockEast)) {
+				} else if (blockIsLogic(blockEast)) {
 					logicPushIfUnique(list, {x: x + 1, y: y, z: z});
 				}
 			}
@@ -214,7 +139,7 @@ function logicFindConnections(x, y, z, wireType, blockFunction, list) {
 				blockWest = worldGetBlock(x - 1, y, z);
 				if (blockWest === wireType) {
 					availableBranches |= logicWEST_BIT;
-				} else if (blockFunction(blockWest)) {
+				} else if (blockIsLogic(blockWest)) {
 					logicPushIfUnique(list, {x: x - 1, y: y, z: z});
 				}
 			}
@@ -222,7 +147,7 @@ function logicFindConnections(x, y, z, wireType, blockFunction, list) {
 				blockNorth = worldGetBlock(x, y, z + 1);
 				if (blockNorth === wireType) {
 					availableBranches |= logicNORTH_BIT;
-				} else if (blockFunction(blockNorth)) {
+				} else if (blockIsLogic(blockNorth)) {
 					logicPushIfUnique(list, {x: x, y: y, z: z + 1});
 				}
 			}
@@ -230,7 +155,7 @@ function logicFindConnections(x, y, z, wireType, blockFunction, list) {
 				blockSouth = worldGetBlock(x, y, z - 1);
 				if (blockSouth === wireType) {
 					availableBranches |= logicSOUTH_BIT;
-				} else if (blockFunction(blockSouth)) {
+				} else if (blockIsLogic(blockSouth)) {
 					logicPushIfUnique(list, {x: x, y: y, z: z - 1});
 				}
 			}
@@ -238,7 +163,7 @@ function logicFindConnections(x, y, z, wireType, blockFunction, list) {
 				blockUp = worldGetBlock(x, y + 1, z);
 				if (blockUp === wireType) {
 					availableBranches |= logicUP_BIT;
-				} else if (blockFunction(blockUp)) {
+				} else if (blockIsLogic(blockUp)) {
 					logicPushIfUnique(list, {x: x, y: y + 1, z: z});
 				}
 			}
@@ -246,7 +171,7 @@ function logicFindConnections(x, y, z, wireType, blockFunction, list) {
 				blockDown = worldGetBlock(x, y - 1, z);
 				if (blockDown === wireType) {
 					availableBranches |= logicDOWN_BIT;
-				} else if (blockFunction(blockDown)) {
+				} else if (blockIsLogic(blockDown)) {
 					logicPushIfUnique(list, {x: x, y: y - 1, z: z});
 				}
 			}
@@ -308,43 +233,28 @@ function logicFindConnections(x, y, z, wireType, blockFunction, list) {
 		}
 	}
 }
+
 function logicCompileAll() {
-	for (let i = 0; i < logicLogicObjects.length; ++i) {
-		logicCompileLogicObject(logicLogicObjects[i]);
-	}
-	for (let j = 0; j < logicOutputObjects.length; ++j) {
-		logicCompileOutputObject(logicOutputObjects[j]);
+	for (let i = 0; i < logicObjects.length; ++i) {
+		logicCompileLogicObject(logicObjects[i]);
 	}
 }
-function logicWriteBlockStates() {
-	for (let i = 0; i < logicLogicObjects.length; ++i) {
-		let object = logicLogicObjects[i];
-		worldSetBlockState(object.x, object.y, object.z, object.state);
-	}
-}
-function logicUpdateLogicObjects() {
-	for (let i = 0; i < logicLogicObjects.length; ++i) {
-		logicLogicObjects[i].updateState();
-	}
-}
-function logicUpdateOutputObjects() {
-	for (let i = 0; i < logicOutputObjects.length; ++i) {
-		logicOutputObjects[i].updateState();
-	}
-}
+
 function logicUpdate() {
 	logicSpeedProgress += logicSPEED;
 	while (logicSpeedProgress >= logicBASE_SPEED) {
-		logicUpdateLogicObjects();
-		logicUpdateOutputObjects();
+		for (let i = 0; i < logicObjects.length; ++i) {
+			logicObjects[i].updateState();
+		}
+		for (let i = 0; i < logicObjects.length; ++i) {
+			logicObjects[i].finalize();
+		}
 		logicSpeedProgress -= logicBASE_SPEED;
 	}
 }
 function logicInit() {
-	logicLogicObjects = [];
-	logicOutputObjects = [];
+	logicObjects = [];
 	logicSpeedProgress = 0;
 }
 var logicSpeedProgress;
-var logicLogicObjects;
-var logicOutputObjects;
+var logicObjects;

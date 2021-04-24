@@ -1,29 +1,23 @@
 'use strict';
 const blockDYNAMIC_BIT = 0x80;
-const blockSTATE_BIT_DIGIT = 7;
-const blockSTATE_BIT = 0x40;
-const blockNO_STATE_MASK = 0xBF;
 // Static
 const blockTYPE_NONE = 0;
 const blockTYPE_GRASS = 1;
 const blockTYPE_DIRT = 2;
 const blockTYPE_WIRE1 = 3;
 const blockTYPE_WIRE2 = 4;
-const blockTYPE_NOR = 5;
-const blockTYPE_OR = 6;
+const blockTYPE_INPUT = 5;
 // Dynamic
-const blockTYPE_OUTPUT_OFF = blockDYNAMIC_BIT | 0;
-const blockTYPE_OUTPUT_ON = blockDYNAMIC_BIT | 1;
+const blockTYPE_NOR_OFF = blockDYNAMIC_BIT | 0;
+const blockTYPE_NOR_ON = blockDYNAMIC_BIT | 1;
+const blockTYPE_OR_OFF = blockDYNAMIC_BIT | 2;
+const blockTYPE_OR_ON = blockDYNAMIC_BIT | 3;
 
-function blockIsOutput(block) {
-	return block === blockTYPE_OUTPUT_ON || block === blockTYPE_OUTPUT_OFF;
+function blockIsLogic(block) {
+	return (block & blockDYNAMIC_BIT) === blockDYNAMIC_BIT;
 }
 function blockIsWire(block) {
 	return block === blockTYPE_WIRE1 || block === blockTYPE_WIRE2;
-}
-function blockIsLogic(block) {
-	let noStateBlock = block & blockNO_STATE_MASK;
-	return (noStateBlock === blockTYPE_NOR || noStateBlock === blockTYPE_OR);
 }
 
 var blockTypes = [];
@@ -59,7 +53,7 @@ blockTypes[blockTYPE_WIRE2] = {
 	otherG: 0.2,
 	otherB: 0.5	
 };
-blockTypes[blockTYPE_NOR] = {
+blockTypes[blockTYPE_INPUT] = {
 	upR: 0.9,
 	upG: 0.9,
 	upB: 0.9,
@@ -67,15 +61,7 @@ blockTypes[blockTYPE_NOR] = {
 	otherG: 0.9,
 	otherB: 0.9	
 };
-blockTypes[blockTYPE_OR] = {
-	upR: 0.9,
-	upG: 0.9,
-	upB: 0.5,
-	otherR: 0.9,
-	otherG: 0.9,
-	otherB: 0.5	
-};
-blockTypes[blockTYPE_OUTPUT_ON] = {
+blockTypes[blockTYPE_NOR_ON] = {
 	upR: 1,
 	upG: 0.2,
 	upB: 0.2,
@@ -83,11 +69,27 @@ blockTypes[blockTYPE_OUTPUT_ON] = {
 	otherG: 0.2,
 	otherB: 0.2	
 };
-blockTypes[blockTYPE_OUTPUT_OFF] = {
-	upR: 0.2,
+blockTypes[blockTYPE_NOR_OFF] = {
+	upR: 0.25,
 	upG: 0.2,
 	upB: 0.2,
-	otherR: 0.2,
+	otherR: 0.25,
 	otherG: 0.2,
+	otherB: 0.2	
+};
+blockTypes[blockTYPE_OR_ON] = {
+	upR: 0.2,
+	upG: 1,
+	upB: 0.2,
+	otherR: 0.2,
+	otherG: 1,
+	otherB: 0.2	
+};
+blockTypes[blockTYPE_OR_OFF] = {
+	upR: 0.2,
+	upG: 0.25,
+	upB: 0.2,
+	otherR: 0.2,
+	otherG: 0.25,
 	otherB: 0.2	
 };

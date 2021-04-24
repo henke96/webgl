@@ -42,7 +42,7 @@ WorldChunk.prototype.updateModel = function(dynamic) {
 				let block = blocks[blockIndex];
 				if (block === 0 || (block & blockDYNAMIC_BIT) === dynamicCheck) continue;
 				let zPos = z + 1;
-				let blockType = blockTypes[block & blockNO_STATE_MASK];
+				let blockType = blockTypes[block];
 				let otherR = blockType.otherR, otherG = blockType.otherG, otherB = blockType.otherB;
 				let testBlock;
 				if (z === 15) {
@@ -322,19 +322,6 @@ function worldGetChunk(xChunk, yChunk, zChunk) {
 	}
 	return worldChunks[xChunk*worldSizeYZChunks + yChunk*worldSizeZChunks + zChunk];
 }
-function worldSetBlockState(x, y, z, state) {
-	let chunk = worldGetChunk(x >> 4, y >> 4, z >> 4);
-	if (chunk === null) {
-		return;
-	}
-	let index = ((x & 0xf) << 8) + ((y & 0xf) << 4) + (z & 0xf);
-	let block = chunk.blocks[index];
-	if (state === 0) {
-		chunk.blocks[index] = block & blockNO_STATE_MASK;
-	} else {
-		chunk.blocks[index] = block | blockSTATE_BIT;
-	}
-}
 function worldSetBlock(x, y, z, value) {
 	let chunk = worldGetChunk(x >> 4, y >> 4, z >> 4);
 	if (chunk === null) {
@@ -511,7 +498,6 @@ function worldSave() {
 function worldSaveFile() {
 	let fileName = prompt("File name: ", "world");
 	if (fileName === null) return;
-	logicWriteBlockStates();
 	let data = [];
 	for (let i = 0; i < worldChunks.length; ++i) {
 		data.push(worldChunks[i].blocks);
@@ -555,19 +541,19 @@ function worldLoadFile(event) {
 				for (let j = 0; j < 4096; ++j, ++blockIndex) {
 					let block = array[blockIndex];
 					chunk.blocks[j] = block;
-					switch (block & blockNO_STATE_MASK) {
-					case blockTYPE_NOR:
-						logicLogicObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-						break;
-					case blockTYPE_OR:
-						logicLogicObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-						break;
-					case blockTYPE_OUTPUT_OFF:
-						logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
-						break;
-					case blockTYPE_OUTPUT_ON:
-						logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
-						break;				 
+					switch (block) {
+						case blockTYPE_NOR_OFF:
+							logicObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
+							break;
+						case blockTYPE_NOR_ON:
+							logicObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
+							break;
+						case blockTYPE_OR_OFF:
+							logicObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
+							break;
+						case blockTYPE_OR_ON:
+							logicObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
+							break;	 
 					}
 				}
 				chunk.dirty = worldDIRTY_DYNAMIC_BIT | worldDIRTY_STATIC_BIT;
@@ -611,19 +597,19 @@ function worldLoadFromString(world) {
 				block &= 0xFF;
 			}
 			chunk.blocks[j] = block;
-			switch (block & blockNO_STATE_MASK) {
-			case blockTYPE_NOR:
-				logicLogicObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-				break;
-			case blockTYPE_OR:
-				logicLogicObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-				break;
-			case blockTYPE_OUTPUT_OFF:
-				logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
-				break;
-			case blockTYPE_OUTPUT_ON:
-				logicOutputObjects.push(new LogicOutput((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
-				break;				 
+			switch (block) {
+				case blockTYPE_NOR_OFF:
+					logicObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
+					break;
+				case blockTYPE_NOR_ON:
+					logicObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
+					break;
+				case blockTYPE_OR_OFF:
+					logicObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
+					break;
+				case blockTYPE_OR_ON:
+					logicObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
+					break;
 			}
 		}
 		chunk.dirty = worldDIRTY_DYNAMIC_BIT | worldDIRTY_STATIC_BIT;

@@ -3,7 +3,6 @@ const worldeditSET_POS_FIRST = "Set first pos";
 const worldeditSET_POS_SECOND = "Set second pos";
 function worldeditCopy() {
 	if (worldeditSelection.x === -1) return;
-	logicWriteBlockStates();
 	let minX = worldeditSelection.x, minY = worldeditSelection.y, minZ = worldeditSelection.z;
 	let dx = worldeditSelection.dx, dy = worldeditSelection.dy, dz = worldeditSelection.dz;
 	if (worldeditBlocks.length < dx*dy*dz) {
@@ -21,7 +20,6 @@ function worldeditCopy() {
 	worldeditCopyOffset = {x: minX - Math.floor(renderCamera.x), y: minY - Math.floor(renderCamera.y), z: minZ - Math.floor(renderCamera.z)};
 }
 function worldeditStoreVolume(startX, startY, startZ, endX, endY, endZ) {
-	logicWriteBlockStates();
 	worldeditStoredVolume = {startX: startX, startY: startY, startZ: startZ, endX: endX, endY: endY, endZ: endZ};
 	let volume = (endX - startX)*(endY - startY)*(endZ - startZ);
 	if (volume > worldeditStoredBlocks.length) {
@@ -52,37 +50,30 @@ function worldeditRestoreVolume() {
 	worldeditStoredVolume.startX = -1;
 }
 function worldeditOnVolumeChanged(pasteX, pasteY, pasteZ, endX, endY, endZ) {
-	let i = logicLogicObjects.length;
+	let i = logicObjects.length;
 	while (i--) {
-		let logicObject = logicLogicObjects[i];
+		let logicObject = logicObjects[i];
 		if (logicObject.x >= pasteX && logicObject.x < endX && logicObject.y >= pasteY && logicObject.y < endY && logicObject.z >= pasteZ && logicObject.z < endZ) {
-			logicLogicObjects.splice(i, 1);
-		}
-	}
-	i = logicOutputObjects.length;
-	while (i--) {
-		let outputObject = logicOutputObjects[i];
-		if (outputObject.x >= pasteX && outputObject.x < endX && outputObject.y >= pasteY && outputObject.y < endY && outputObject.z >= pasteZ && outputObject.z < endZ) {
-			logicOutputObjects.splice(i, 1);
+			logicObjects.splice(i, 1);
 		}
 	}
 	for (let x = pasteX; x < endX; ++x) {
 		for (let y = pasteY; y < endY; ++y) {
 			for (let z = pasteZ; z < endZ; ++z) {
 				let block = worldGetBlock(x, y, z);
-				switch (block & blockNO_STATE_MASK) {
-				case blockTYPE_NOR:
-					logicLogicObjects.push(new LogicNor(x, y, z, (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-					break;
-				case blockTYPE_OR:
-					logicLogicObjects.push(new LogicOr(x, y, z, (block >>> blockSTATE_BIT_DIGIT) & 0x1));
-					break;
-				case blockTYPE_OUTPUT_OFF:
-					logicOutputObjects.push(new LogicOutput(x, y, z, 0));
-					break;
-				case blockTYPE_OUTPUT_ON:
-					logicOutputObjects.push(new LogicOutput(x, y, z, 1));
-					break;				 
+				switch (block) {
+					case blockTYPE_NOR_OFF:
+						logicObjects.push(new LogicNor(x, y, z, 0));
+						break;
+					case blockTYPE_NOR_ON:
+						logicObjects.push(new LogicNor(x, y, z, 1));
+						break;
+					case blockTYPE_OR_OFF:
+						logicObjects.push(new LogicOr(x, y, z, 0));
+						break;
+					case blockTYPE_OR_ON:
+						logicObjects.push(new LogicOr(x, y, z, 1));
+						break;
 				}
 			}
 		}

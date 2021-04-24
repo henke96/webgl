@@ -64,66 +64,49 @@ function gInit() {
 				if (pos !== null) {
 					let oldBlock = worldGetBlock(pos.x, pos.y, pos.z);
 					worldSetBlock(pos.x, pos.y, pos.z, 0);
-					if (blockIsWire(oldBlock)) {
-						logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, oldBlock);
+					if (blockIsWire(oldBlock) || oldBlock === blockTYPE_INPUT) {
+						logicCompileAll();
 					} else if (blockIsLogic(oldBlock)) {
-						// TODO: Could benefit from chunk structure
 						let index;
-						for (let i = 0; i < logicLogicObjects.length; ++i) {
-							let logicObject = logicLogicObjects[i];
+						for (let i = 0; i < logicObjects.length; ++i) {
+							let logicObject = logicObjects[i];
 							if (logicObject.x === pos.x && logicObject.y === pos.y && logicObject.z === pos.z) {
 								index = i;
 								break;
 							}
 						}
-						logicLogicObjects.splice(index, 1);
-						logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z, 0);
-					} else if (blockIsOutput(oldBlock)) {
-						// TODO: Could benefit from chunk structure
-						let index;
-						for (let i = 0; i < logicOutputObjects.length; ++i) {
-							let outputObject = logicOutputObjects[i];
-							if (outputObject.x === pos.x && outputObject.y === pos.y && outputObject.z === pos.z) {
-								index = i;
-								break;
-							}
-						}
-						logicOutputObjects.splice(index, 1);
-						logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, 0);
+						logicObjects.splice(index, 1);
+						logicCompileAll();
 					}
 				}
 			} else if (e.button === 1) {
 				let pos = worldGetInteractPos(false);
 				if (pos !== null) {
-					gCurrentBlock = (worldGetBlock(pos.x, pos.y, pos.z) & blockNO_STATE_MASK);
+					gCurrentBlock = (worldGetBlock(pos.x, pos.y, pos.z));
 				}
 			} else if (e.button === 2) {
 				if (gCurrentBlock !== 0) {
 					let pos = worldGetInteractPos(true);
 					if (pos !== null) {
 						worldSetBlock(pos.x, pos.y, pos.z, gCurrentBlock);
-						if (blockIsWire(gCurrentBlock)) {
-							logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, gCurrentBlock);
-						} else if (gCurrentBlock === blockTYPE_NOR) {
+						if (blockIsWire(gCurrentBlock) || gCurrentBlock === blockTYPE_INPUT) {
+							logicCompileAll();
+						}else if (gCurrentBlock === blockTYPE_NOR_OFF) {
 							let logicObject = new LogicNor(pos.x, pos.y, pos.z, 0);
-							logicLogicObjects.push(logicObject);
-							logicCompileLogicObject(logicObject);
-							logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z);
-						} else if (gCurrentBlock === blockTYPE_OR) {
+							logicObjects.push(logicObject);
+							logicCompileAll();
+						} else if (gCurrentBlock === blockTYPE_NOR_ON) {
+							let logicObject = new LogicNor(pos.x, pos.y, pos.z, 1);
+							logicObjects.push(logicObject);
+							logicCompileAll();
+						} else if (gCurrentBlock === blockTYPE_OR_OFF) {
 							let logicObject = new LogicOr(pos.x, pos.y, pos.z, 0);
-							logicLogicObjects.push(logicObject);
-							logicCompileLogicObject(logicObject);
-							logicCompileConnectedOutputObjects(pos.x, pos.y, pos.z);
-						} else if (blockIsOutput(gCurrentBlock)) {
-							let state = 0;
-							if (gCurrentBlock === blockTYPE_OUTPUT_ON) {
-								state = 1;
-							}
-							let outputObject = new LogicOutput(pos.x, pos.y, pos.z, state);
-							logicOutputObjects.push(outputObject);
-							logicCompileOutputObject(outputObject);
-							// TODO: this also compiles neighbouring logic objects (not actually connected)
-							logicCompileConnectedLogicObjects(pos.x, pos.y, pos.z, 0);
+							logicObjects.push(logicObject);
+							logicCompileAll();
+						} else if (gCurrentBlock === blockTYPE_OR_ON) {
+							let logicObject = new LogicOr(pos.x, pos.y, pos.z, 1);
+							logicObjects.push(logicObject);
+							logicCompileAll();
 						}
 					}
 				}
@@ -208,13 +191,13 @@ function gOnKeyDown(e) {
 		gCurrentBlock = 0;
 		break;
 	case "1":
-		gCurrentBlock = blockTYPE_OUTPUT_OFF;
+		gCurrentBlock = blockTYPE_NOR_ON;
 		break;
 	case "2":
-		gCurrentBlock = blockTYPE_NOR;
+		gCurrentBlock = blockTYPE_INPUT;
 		break;
 	case "3":
-		gCurrentBlock = blockTYPE_OR;
+		gCurrentBlock = blockTYPE_OR_OFF;
 		break;
 	case "4":
 		gCurrentBlock = blockTYPE_WIRE1;
@@ -223,6 +206,9 @@ function gOnKeyDown(e) {
 		gCurrentBlock = blockTYPE_WIRE2;
 		break;
 	case "6":
+		gCurrentBlock = blockTYPE_GRASS;
+		break;
+	case "7":
 		gCurrentBlock = blockTYPE_DIRT;
 		break;
 	case " ":
