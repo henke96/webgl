@@ -1,6 +1,6 @@
 'use strict';
 const logicBASE_SPEED = 1;
-const logicSPEED = 10000;
+const logicSPEED = 1000;
 
 const logicEAST_BIT = 0x1;
 const logicWEST_BIT = 0x2;
@@ -10,52 +10,13 @@ const logicUP_BIT = 0x10;
 const logicDOWN_BIT = 0x20;
 const logicBACKTRACKED_BIT = 0x40;
 
-function LogicNor(x, y, z, state) {
+function LogicObject(x, y, z, state) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
 	this.state = state;
 	this.nextState = undefined;
 	this.inputs = [];
-}
-
-LogicNor.prototype.updateState = function() {
-	
-	
-}
-
-LogicNor.prototype.finalize = function() {
-	
-}
-
-function LogicOr(x, y, z, state) {
-	this.x = x;
-	this.y = y;
-	this.z = z;
-	this.state = state;
-	this.nextState = undefined;
-	this.inputs = [];
-}
-
-LogicOr.prototype.updateState = function() {
-	this.nextState = 0;
-	for (let i = 0; i < this.inputs.length; ++i) {
-		if (this.inputs[i].state === 1) {
-			this.nextState = 1;
-			break;
-		}
-	}
-	
-}
-LogicOr.prototype.finalize = function() {
-	if (this.nextState !== this.state) {
-		this.state = this.nextState;
-		let blockType = blockTYPE_OR_OFF;
-		if (this.state === 1) {
-			blockType = blockTYPE_OR_ON;
-		}
-		worldUpdateBlock(this.x, this.y, this.z, blockType);
-	}
 }
 
 function logicPushIfUnique(list, newEntry) {

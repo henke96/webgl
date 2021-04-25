@@ -101,19 +101,19 @@ function gInit() {
 						if (blockIsWire(gCurrentBlock) || gCurrentBlock === blockTYPE_INPUT) {
 							logicCompileAll();
 						}else if (gCurrentBlock === blockTYPE_NOR_OFF) {
-							let logicObject = new LogicNor(pos.x, pos.y, pos.z, 0);
+							let logicObject = new LogicObject(pos.x, pos.y, pos.z, 0);
 							logicNorObjects.push(logicObject);
 							logicCompileAll();
 						} else if (gCurrentBlock === blockTYPE_NOR_ON) {
-							let logicObject = new LogicNor(pos.x, pos.y, pos.z, 1);
+							let logicObject = new LogicObject(pos.x, pos.y, pos.z, 1);
 							logicNorObjects.push(logicObject);
 							logicCompileAll();
 						} else if (gCurrentBlock === blockTYPE_OR_OFF) {
-							let logicObject = new LogicOr(pos.x, pos.y, pos.z, 0);
+							let logicObject = new LogicObject(pos.x, pos.y, pos.z, 0);
 							logicOrObjects.push(logicObject);
 							logicCompileAll();
 						} else if (gCurrentBlock === blockTYPE_OR_ON) {
-							let logicObject = new LogicOr(pos.x, pos.y, pos.z, 1);
+							let logicObject = new LogicObject(pos.x, pos.y, pos.z, 1);
 							logicOrObjects.push(logicObject);
 							logicCompileAll();
 						}

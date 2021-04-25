@@ -543,16 +543,16 @@ function worldLoadFile(event) {
 					chunk.blocks[j] = block;
 					switch (block) {
 						case blockTYPE_NOR_OFF:
-							logicNorObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
+							logicNorObjects.push(new LogicObject((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
 							break;
 						case blockTYPE_NOR_ON:
-							logicNorObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
+							logicNorObjects.push(new LogicObject((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
 							break;
 						case blockTYPE_OR_OFF:
-							logicOrObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
+							logicOrObjects.push(new LogicObject((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
 							break;
 						case blockTYPE_OR_ON:
-							logicOrObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
+							logicOrObjects.push(new LogicObject((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
 							break;	 
 					}
 				}
@@ -599,16 +599,16 @@ function worldLoadFromString(world) {
 			chunk.blocks[j] = block;
 			switch (block) {
 				case blockTYPE_NOR_OFF:
-					logicNorObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
+					logicNorObjects.push(new LogicObject((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
 					break;
 				case blockTYPE_NOR_ON:
-					logicNorObjects.push(new LogicNor((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
+					logicNorObjects.push(new LogicObject((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
 					break;
 				case blockTYPE_OR_OFF:
-					logicOrObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
+					logicOrObjects.push(new LogicObject((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 0));
 					break;
 				case blockTYPE_OR_ON:
-					logicOrObjects.push(new LogicOr((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
+					logicOrObjects.push(new LogicObject((chunk.xChunk << 4) + (j >>> 8), (chunk.yChunk << 4) + ((j >>> 4) & 0xf), (chunk.zChunk << 4) + (j & 0xf), 1));
 					break;
 			}
 		}

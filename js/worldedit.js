@@ -70,16 +70,16 @@ function worldeditOnVolumeChanged(pasteX, pasteY, pasteZ, endX, endY, endZ) {
 				let block = worldGetBlock(x, y, z);
 				switch (block) {
 					case blockTYPE_NOR_OFF:
-						logicNorObjects.push(new LogicNor(x, y, z, 0));
+						logicNorObjects.push(new LogicObject(x, y, z, 0));
 						break;
 					case blockTYPE_NOR_ON:
-						logicNorObjects.push(new LogicNor(x, y, z, 1));
+						logicNorObjects.push(new LogicObject(x, y, z, 1));
 						break;
 					case blockTYPE_OR_OFF:
-						logicOrObjects.push(new LogicOr(x, y, z, 0));
+						logicOrObjects.push(new LogicObject(x, y, z, 0));
 						break;
 					case blockTYPE_OR_ON:
-						logicOrObjects.push(new LogicOr(x, y, z, 1));
+						logicOrObjects.push(new LogicObject(x, y, z, 1));
 						break;
 				}
 			}
