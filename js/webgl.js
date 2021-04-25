@@ -67,15 +67,24 @@ function gInit() {
 					if (blockIsWire(oldBlock) || oldBlock === blockTYPE_INPUT) {
 						logicCompileAll();
 					} else if (blockIsLogic(oldBlock)) {
-						let index;
-						for (let i = 0; i < logicObjects.length; ++i) {
-							let logicObject = logicObjects[i];
+						let index = -1;
+						for (let i = 0; i < logicNorObjects.length; ++i) {
+							let logicObject = logicNorObjects[i];
 							if (logicObject.x === pos.x && logicObject.y === pos.y && logicObject.z === pos.z) {
 								index = i;
 								break;
 							}
 						}
-						logicObjects.splice(index, 1);
+						if (index !== -1) logicNorObjects.splice(index, 1);
+						index = -1;
+						for (let i = 0; i < logicOrObjects.length; ++i) {
+							let logicObject = logicOrObjects[i];
+							if (logicObject.x === pos.x && logicObject.y === pos.y && logicObject.z === pos.z) {
+								index = i;
+								break;
+							}
+						}
+						if (index !== -1) logicOrObjects.splice(index, 1);
 						logicCompileAll();
 					}
 				}
@@ -93,19 +102,19 @@ function gInit() {
 							logicCompileAll();
 						}else if (gCurrentBlock === blockTYPE_NOR_OFF) {
 							let logicObject = new LogicNor(pos.x, pos.y, pos.z, 0);
-							logicObjects.push(logicObject);
+							logicNorObjects.push(logicObject);
 							logicCompileAll();
 						} else if (gCurrentBlock === blockTYPE_NOR_ON) {
 							let logicObject = new LogicNor(pos.x, pos.y, pos.z, 1);
-							logicObjects.push(logicObject);
+							logicNorObjects.push(logicObject);
 							logicCompileAll();
 						} else if (gCurrentBlock === blockTYPE_OR_OFF) {
 							let logicObject = new LogicOr(pos.x, pos.y, pos.z, 0);
-							logicObjects.push(logicObject);
+							logicOrObjects.push(logicObject);
 							logicCompileAll();
 						} else if (gCurrentBlock === blockTYPE_OR_ON) {
 							let logicObject = new LogicOr(pos.x, pos.y, pos.z, 1);
-							logicObjects.push(logicObject);
+							logicOrObjects.push(logicObject);
 							logicCompileAll();
 						}
 					}

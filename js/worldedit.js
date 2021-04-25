@@ -50,11 +50,18 @@ function worldeditRestoreVolume() {
 	worldeditStoredVolume.startX = -1;
 }
 function worldeditOnVolumeChanged(pasteX, pasteY, pasteZ, endX, endY, endZ) {
-	let i = logicObjects.length;
+	let i = logicNorObjects.length;
 	while (i--) {
-		let logicObject = logicObjects[i];
+		let logicObject = logicNorObjects[i];
 		if (logicObject.x >= pasteX && logicObject.x < endX && logicObject.y >= pasteY && logicObject.y < endY && logicObject.z >= pasteZ && logicObject.z < endZ) {
-			logicObjects.splice(i, 1);
+			logicNorObjects.splice(i, 1);
+		}
+	}
+	i = logicOrObjects.length;
+	while (i--) {
+		let logicObject = logicOrObjects[i];
+		if (logicObject.x >= pasteX && logicObject.x < endX && logicObject.y >= pasteY && logicObject.y < endY && logicObject.z >= pasteZ && logicObject.z < endZ) {
+			logicOrObjects.splice(i, 1);
 		}
 	}
 	for (let x = pasteX; x < endX; ++x) {
@@ -63,16 +70,16 @@ function worldeditOnVolumeChanged(pasteX, pasteY, pasteZ, endX, endY, endZ) {
 				let block = worldGetBlock(x, y, z);
 				switch (block) {
 					case blockTYPE_NOR_OFF:
-						logicObjects.push(new LogicNor(x, y, z, 0));
+						logicNorObjects.push(new LogicNor(x, y, z, 0));
 						break;
 					case blockTYPE_NOR_ON:
-						logicObjects.push(new LogicNor(x, y, z, 1));
+						logicNorObjects.push(new LogicNor(x, y, z, 1));
 						break;
 					case blockTYPE_OR_OFF:
-						logicObjects.push(new LogicOr(x, y, z, 0));
+						logicOrObjects.push(new LogicOr(x, y, z, 0));
 						break;
 					case blockTYPE_OR_ON:
-						logicObjects.push(new LogicOr(x, y, z, 1));
+						logicOrObjects.push(new LogicOr(x, y, z, 1));
 						break;
 				}
 			}

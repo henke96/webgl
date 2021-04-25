@@ -1,6 +1,6 @@
 'use strict';
 const logicBASE_SPEED = 1;
-const logicSPEED = 100;
+const logicSPEED = 10000;
 
 const logicEAST_BIT = 0x1;
 const logicWEST_BIT = 0x2;
@@ -20,25 +20,12 @@ function LogicNor(x, y, z, state) {
 }
 
 LogicNor.prototype.updateState = function() {
-	this.nextState = 1;
-	for (let i = 0; i < this.inputs.length; ++i) {
-		if (this.inputs[i].state === 1) {
-			this.nextState = 0;
-			break;
-		}
-	}
+	
 	
 }
 
 LogicNor.prototype.finalize = function() {
-	if (this.nextState !== this.state) {
-		this.state = this.nextState;
-		let blockType = blockTYPE_NOR_OFF;
-		if (this.state === 1) {
-			blockType = blockTYPE_NOR_ON;
-		}
-		worldUpdateBlock(this.x, this.y, this.z, blockType);
-	}
+	
 }
 
 function LogicOr(x, y, z, state) {
@@ -103,8 +90,18 @@ function logicCompileLogicObject(logicObject) {
 	
 	logicObject.inputs.length = 0;
 	// TODO: Could benefit from chunk structure
-	for (let i = 0; i < logicObjects.length; ++i) {
-		let object = logicObjects[i];
+	for (let i = 0; i < logicNorObjects.length; ++i) {
+		let object = logicNorObjects[i];
+		for (let j = 0; j < connections.length; ++j) {
+			let connection = connections[j];
+			if (object.x === connection.x && object.y === connection.y && object.z === connection.z) {
+				logicObject.inputs.push(object);
+				break;
+			}
+		}
+	}
+	for (let i = 0; i < logicOrObjects.length; ++i) {
+		let object = logicOrObjects[i];
 		for (let j = 0; j < connections.length; ++j) {
 			let connection = connections[j];
 			if (object.x === connection.x && object.y === connection.y && object.z === connection.z) {
@@ -235,26 +232,75 @@ function logicFindConnections(x, y, z, wireType, list) {
 }
 
 function logicCompileAll() {
-	for (let i = 0; i < logicObjects.length; ++i) {
-		logicCompileLogicObject(logicObjects[i]);
+	for (let i = 0; i < logicNorObjects.length; ++i) {
+		logicCompileLogicObject(logicNorObjects[i]);
+	}
+	for (let i = 0; i < logicOrObjects.length; ++i) {
+		logicCompileLogicObject(logicOrObjects[i]);
+	}
+}
+
+function logicUpdateObjects() {
+	for (let i = 0; i < logicNorObjects.length; ++i) {
+		let object = logicNorObjects[i];
+		object.nextState = 1;
+		for (let i = 0; i < object.inputs.length; ++i) {
+			if (object.inputs[i].state === 1) {
+				object.nextState = 0;
+				break;
+			}
+		}
+	}
+	for (let i = 0; i < logicOrObjects.length; ++i) {
+		let object = logicOrObjects[i];
+		object.nextState = 0;
+		for (let i = 0; i < object.inputs.length; ++i) {
+			if (object.inputs[i].state === 1) {
+				object.nextState = 1;
+				break;
+			}
+		}
+	}
+}
+
+function logicFinalizeObjects() {
+	for (let i = 0; i < logicNorObjects.length; ++i) {
+		let object = logicNorObjects[i];
+		if (object.nextState !== object.state) {
+			object.state = object.nextState;
+			let blockType = blockTYPE_NOR_OFF;
+			if (object.state === 1) {
+				blockType = blockTYPE_NOR_ON;
+			}
+			worldUpdateBlock(object.x, object.y, object.z, blockType);
+		}
+	}
+	for (let i = 0; i < logicOrObjects.length; ++i) {
+		let object = logicOrObjects[i];
+		if (object.nextState !== object.state) {
+			object.state = object.nextState;
+			let blockType = blockTYPE_OR_OFF;
+			if (object.state === 1) {
+				blockType = blockTYPE_OR_ON;
+			}
+			worldUpdateBlock(object.x, object.y, object.z, blockType);
+		}
 	}
 }
 
 function logicUpdate() {
 	logicSpeedProgress += logicSPEED;
 	while (logicSpeedProgress >= logicBASE_SPEED) {
-		for (let i = 0; i < logicObjects.length; ++i) {
-			logicObjects[i].updateState();
-		}
-		for (let i = 0; i < logicObjects.length; ++i) {
-			logicObjects[i].finalize();
-		}
+		logicUpdateObjects();
+		logicFinalizeObjects();
 		logicSpeedProgress -= logicBASE_SPEED;
 	}
 }
 function logicInit() {
-	logicObjects = [];
+	logicNorObjects = [];
+	logicOrObjects = [];
 	logicSpeedProgress = 0;
 }
 var logicSpeedProgress;
-var logicObjects;
+var logicNorObjects;
+var logicOrObjects;
